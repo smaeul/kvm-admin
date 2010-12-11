@@ -1,0 +1,67 @@
+#!/bin/bash
+# bring down nic and bridge
+# rename a existing network interface
+# destroy bridge 
+# optional, set the ip address and default gw back to nic 
+
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin
+
+# the network interface which should use
+nic="eth0"
+
+
+###########################################################
+# from this point nothing has to edit                     #
+# only if your wish to extend or modify the script itself #
+###########################################################
+
+# name of the bridge
+dev_bridge=${nic}
+# name of the rename original network interface
+dev_nic="r${nic}"
+
+# this is only a simple check for ip address and gateway
+# when network interface has ip, save it
+ip_dev=$(ip addr show ${nic} | awk '/inet/ {print $2}')
+
+if [ "${ip_dev}" = "" ]; then 
+    use_ip="no"
+else 
+    use_ip="yes"
+fi
+
+# when network interface has gateway, save it
+# searching for default gateway
+ip_gw=$(ip route | awk '/default/ {print $3}')
+
+if [ "${ip_gw}" = "" ]; then
+    use_gw="no"
+else 
+    use_gw="yes"
+fi
+
+ip addr flush ${dev_bridge}
+# set down bridge
+ip link set ${dev_bridge} down
+# set down nic
+ip link set ${dev_nic} down
+
+# remove nic from bridge
+brctl delif ${dev_bridge} ${dev_nic}
+# destroy bridge
+brctl delbr ${dev_bridge}
+
+# rename nic 
+ip link set ${dev_nic} name ${nic} 
+# bring up renamed nic
+ip link set ${nic} up
+
+if [ "${use_ip}" = "yes" ]; then
+    # add ip to nic
+    ip addr add ${ip_dev} dev ${nic}
+    if [ "${use_gw}" = "yes" ]; then
+        # delte and add a default route
+        ip route add via ${ip_gw}
+    fi
+fi
+

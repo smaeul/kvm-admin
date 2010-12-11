@@ -1,0 +1,309 @@
+#!/usr/bin/env python
+
+"""
+Tool to manage a kvm guest.
+
+(c) 2007-2010 Jens Kasten <jens@kasten-edv.de> 
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+"""
+
+import os
+import sys
+import re
+
+
+from kvmtools.configparser import Parser
+from kvmtools.kvm import Kvm
+from kvmtools.generate_options import Generator
+
+
+class KvmAdmin(object):
+    """ Class for commandline usage from qemu-kvm guest."""
+
+    def __init__(self):
+        self._base_dir = "/etc/kvm"         # absolute path for configs etc.
+        self._run_path = '/var/run/kvm'     # path to store the pid- and socketfile
+        self._script_dir = 'scripts'        # directory name to store the ifdown and ifup
+        self._guest_config_dir = 'domains'  # directory name to store guest config file
+        self._global_config_dir = 'config'  # directory name to store global config file
+        self._global_config = 'kvm.cfg'     # name for global configuration file
+        self._show_config_argument = "show" # argument to show the string which should execute
+        self.config = {}                    # contain all config variables
+        self.bridge = {}                    # contain all bridges to export them
+        # set the path to work on any directory
+        if self._base_dir is not os.path.dirname(os.path.realpath(sys.argv[0])):
+            self._base_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
+       
+    def get_pidfile(self):
+        """
+        Return the absolute path for pidfile.
+        """
+        pidfile = "".join([self.guest, ".pid"])
+        pidfile = os.path.join(self._run_path, pidfile)
+        return pidfile
+    
+    def get_socketfile(self):
+        """
+        Return the absolute path for socketfile.
+        """
+        socketfile = "".join([self.guest, ".socket"])
+        socketfile = os.path.join(self._run_path, socketfile)
+        return socketfile
+        
+    def get_guest_config_dir(self):
+        """
+        Return the absolute path for guest configuration directory.
+        """
+        if os.path.isdir(os.path.join(self._base_dir, self._guest_config_dir)):
+            return os.path.join(self._base_dir, self._guest_config_dir)
+        else:
+            raise Execption("Guest config directory '%s' does not exists." %
+                self.get_guest_config_dir())
+
+    def get_global_config_dir(self):
+        """
+        Return the absolute path for global configuration directory.
+        """
+        if os.path.isdir(os.path.join(self._base_dir, self._global_config_dir)):
+            return os.path.join(self._base_dir, self._global_config_dir)
+        else:
+            raise Exception("Global config directory '%s' does not exists." %
+                self.get_global_config_dir())
+
+    def available_guests(self):
+        """
+        Return all available guests as dict.
+        """
+        guests = []
+        for guest in os.listdir(self.get_guest_config_dir()):
+            if os.path.isfile(os.path.join(self.get_guest_config_dir(), guest)):
+                guests.append(guest)
+        if len(guests) >= 1:                
+            return guests
+        else:
+            raise Exception("Guest configuration directory is empty '%s'." 
+                % self.get_guest_config_dir())
+
+    def available_actions(self):
+        """
+        Return all methods which start with _kvm_ from class Kvm.
+        """
+        actions = [self._show_config_argument]  # add action for show only the string
+        prefix = "_kvm_"
+        for action in dir(Kvm):
+            if action.startswith(prefix):
+                actions.append(action.replace(prefix, ""))
+        if len(actions) >= 2:
+            return actions
+        else:
+            raise Execption("No action available.")
+
+    def get_guest_config(self):
+        """
+        Return the absolute path to guest configuration file.
+        """
+        guest_config = os.path.join(self.get_guest_config_dir(), self.guest)
+        return guest_config
+
+    def get_global_config(self):
+        """
+        Return the absolute path to global configuration file.
+        """
+        global_config = os.path.join(self.get_global_config_dir(), self._global_config)
+        return global_config
+
+    def qemu_kvm_script(self, script_option):
+        """
+        Return the absoulute path for ifup or ifdown script.
+        """
+        script_option = "".join(["kvm-", script_option])
+        script = os.path.join(self._base_dir, self._script_dir)
+        script = os.path.join(script, script_option)
+        return script
+
+    def check_net_tap(self):
+        """
+        Examine the -net tap option for ifname and additional scripts and 
+        bridge strings.
+        """
+        import re
+        temp = {} 
+        for key, value in self.config["net"].iteritems():
+            if value.startswith("tap"):
+                if "ifname" in value:
+                    temp_ifname = re.search(",ifname=([a-zA-Z0-9]+)", value)
+                    ifname = temp_ifname.group(1)
+                else:
+                    temp_ifname = "=".join(["ifname", self.guest])
+                    if re.match("tap,", value):
+                        value = re.sub("tap,", "tap,%s,", value) % temp_ifname
+                    else:
+                        value = re.sub("tap", "tap,%s", value) % temp_ifname
+                    ifname = self.guest
+                bridge_key = "_".join(["bridge", ifname])
+                if "bridge" in value:
+                    temp_bridge = re.search(",bridge=([a-zA-Z0-9]+)", value)
+                    # get the bridge name from searched group
+                    bridge = temp_bridge.group(1)
+                    # remove the bridge from string
+                    value = value.replace(temp_bridge.group(0), "")
+                else:
+                    msg = "Missing second Value for bridge.\nSyntax is: bridge=[a-z,A-Z,0-9]+"
+                    raise Exception(msg)
+                # this is for exporting the bridge name    
+                self.bridge[bridge_key] = bridge
+                if "script" not in value:
+                    value = ",".join([value, "script=%s" % self.qemu_kvm_script('ifup'),
+                                     "downscript=%s" % self.qemu_kvm_script('ifdown')])
+                # add the cleaned value to dict   
+                temp[key] = value
+            else:                    
+                temp[key] = value
+        self.config["net"] = temp
+
+    def add_monitor_to_config(self):
+        """
+        Append the monitor option to the config dict.
+        """
+        if "monitor" not in self.config:
+            socket = os.path.join(self._run_path, self.get_socketfile())
+            monitor = "unix:%s,server,nowait" % socket
+            self.config["monitor"] = monitor
+
+    def add_pidfile_to_config(self):
+        """
+        Append the pidfile option to the config dict.
+        """
+        if "pidfile" not in self.config:
+            pidfile = os.path.join(self._run_path, self.get_pidfile())
+            self.config["pidfile"] = pidfile
+
+    def add_uuid_to_config(self):
+        """
+        Append an unique uuid to the config dict.
+        """
+        import string
+        import random
+        random.seed(os.urandom(8))
+        charset = string.digits + "abcdef"
+        eight = "".join(random.sample(charset, 8))
+        four_first = "".join(random.sample(charset, 4))
+        four_second = "".join(random.sample(charset, 4))
+        four_third = "".join(random.sample(charset, 4))
+        twelve =  "".join(random.sample(charset, 12))
+        uuid = "-".join([eight, four_first, four_second, four_third, twelve])
+        self.config["uuid"] = uuid
+
+    def add_name_to_config(self):
+        """
+        Append a name for window title and process name (on linux only).
+        """
+        if "name" in self.config:
+            process_name = "=".join(["process", self.config["name"]])
+            self.config["name"] = ",".join([self.config["name"], process_name])
+        else:
+            process_name = "=".join(["process", self.guest])
+            self.config["name"] = ",".join([self.guest, process_name])
+
+    def merge_configs(self, global_config, guest_config):
+        """
+        Merge global and guest configfile.
+        Keep this method, maybe add some more configuration files later.
+        """
+        for key in global_config.keys():
+            if key in guest_config:
+                self.config[key] = guest_config[key]
+            else:
+                self.config[key] = global_config[key]
+    
+    def load_config(self):
+        """
+        Build user defined config.
+        """
+        parser = Parser()
+        global_config = parser(self.get_global_config())
+        guest_config = parser(self.get_guest_config())
+        self.merge_configs(global_config, guest_config)
+        # add internal defaults and do some check
+        self.add_name_to_config()    
+        self.add_uuid_to_config()
+        self.add_monitor_to_config()
+        self.add_pidfile_to_config()
+        self.check_net_tap()    
+    
+    def run(self):
+        """
+        Do an action for a guest domain.
+        Call a method based on commandline argument two.
+        """
+        self.load_config()
+        kvm_method = "".join(["_kvm_", self.action])
+        kvm = Kvm(self.get_pidfile(), self.get_socketfile())
+        cmd = kvm.build_command(self.config)
+        if self._show_config_argument == self.action:
+            print "This string would executed:\n%s" % cmd[1]
+        elif "boot" == self.action:
+            getattr(kvm, kvm_method)(cmd[0], self.bridge)
+        elif "monitor" in self.action:
+            if len(sys.argv) >= 4:
+                kvm.open()
+                # build string from third argument till end
+                cmd_monitor = " ".join(str(i) for i in self.monitor)
+                getattr(kvm, kvm_method)(cmd_monitor)
+                kvm.close()
+            else:
+                raise Exception("Missing argument for monitor. Type 'help' as argument.")
+        else:
+            kvm.open()
+            getattr(kvm, kvm_method)()
+            kvm.close()
+
+def main():
+    # check python version, argparse was added in python 2.7 and 3.2
+    # when found lower python version import it from kvmtools
+    if sys.version_info >= (2, 7) or sys.version_info >= (3, 2):
+        import argparse
+    else:
+        import kvmtools.argparse as argparse
+    
+    try:
+        kvm = KvmAdmin()
+        guests = kvm.available_guests()
+        actions = kvm.available_actions()
+
+        # manage the arguments
+        parser = argparse.ArgumentParser(prog="kvm-admin",
+                    description="Cmdline qemu-kvm guest management tool.",
+                    usage="%(prog)s [-h] guest_name|--manage action",)
+        group1 = parser.add_argument_group("Info to manage a guest", 
+                    "Choose a 'guest name' from list and an 'action'.")
+        group1.add_argument("guest", choices=guests, help="guest name")
+        group1.add_argument("action", choices=actions, help="action")
+        group1.add_argument("monitor", nargs="*", default=False, 
+            help="When choose monitor as action its need additional arguments.")
+        parser.parse_args(namespace=kvm)
+        
+        # run the action
+        kvm.run()
+    except Exception, e:
+        if "debug" in kvm.config and kvm.config["debug"] == "enabled":
+            raise 
+        else:
+            print e
+
+
+if __name__ == "__main__":
+    main()

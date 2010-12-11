@@ -1,0 +1,4 @@
+drive = file=/dev/mapper/VG-example,if=virtio,index=0,media=disk,boot=off,cache=none
+drive = file=/path/to/my_cd_img.iso,if=virtio,index=1,media=cdrom,boot=on
+net = nic
+net = tap,bridge=br0
