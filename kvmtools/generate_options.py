@@ -27,7 +27,7 @@ class Generator(object):
         # option on commandline
         self.doit = "doit"
         # option to exclude
-        self.exclude_options = ['h', 'version', 'M']
+        self.exclude_options = ['h', 'version']
 
     def usage(self):
         print "Usage: %s %s" % (sys.argv[0], self.doit)
