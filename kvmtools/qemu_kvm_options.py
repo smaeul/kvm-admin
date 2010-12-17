@@ -4,6 +4,7 @@
 """
 
 qemu_kvm_options = {
+	"M": "disabled",
 	"cpu": "disabled",
 	"smp": "disabled",
 	"numa": "disabled",
