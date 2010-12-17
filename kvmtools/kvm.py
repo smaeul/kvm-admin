@@ -46,30 +46,32 @@ class Kvm(KvmMonitor):
             data = self.monitor_recieve()
             data = "\n".join([i for i in data])
             print data
+        else:
+            print "Guest is not running."
 
     def kvm_boot(self, cmd, bridge):
         """
         Boot the qemu-kvm guest. 
         """
         if self._is_running():
-            print "Not booting. Already running ..."
-            return
-        env = {} 
-        env = os.environ.copy()
-        # add the bridge(s) to the enviroment, so the kvm-if[up|down] can use them
-        if len(bridge) > 0:
-            for key, value in bridge.iteritems():
-                env[key] = value
-        try:        
-            result = Popen(cmd, env=env, stdin=PIPE, stdout=PIPE)
-        except OSError, e:
-            raise Exception(e)
-            return False
-        except IOError, e:
-            raise Exception(e)
-            return False
+            print "Guest is already running."
         else:
-            print "Booting ..."
+            env = {} 
+            env = os.environ.copy()
+            # add the bridge(s) to the enviroment, so the kvm-if[up|down] can use them
+            if len(bridge) > 0:
+                for key, value in bridge.iteritems():
+                    env[key] = value
+            try:        
+                result = Popen(cmd, env=env, stdin=PIPE, stdout=PIPE)
+            except OSError, e:
+                raise Exception(e)
+                return False
+            except IOError, e:
+                raise Exception(e)
+                return False
+            else:
+                print "Starting guest ..." 
 
     def kvm_reboot(self):
         """
@@ -79,9 +81,9 @@ class Kvm(KvmMonitor):
             if self.monitor_send(self.qemu_monitor["reboot"]):
                 print "Rebooting ..."
             else:
-                print "Could not send signal reboot to guest. break ..."
+                print "Could not send signal reboot to guest."
         else:
-            print "Could not reboot. Guest not running ..."
+            print "Guest is not running."
 
     def kvm_shutdown(self):
         """
@@ -91,7 +93,7 @@ class Kvm(KvmMonitor):
         """
         flag = 0
         if not self._is_running():
-            print "Could not shutdown guest. Not running ..."
+            print "Guest not running."
         else:
             from time import sleep
             if self.monitor_send(self.qemu_monitor["shutdown"]):
@@ -112,9 +114,10 @@ class Kvm(KvmMonitor):
                     sleep(0.05)
                     if not os.path.isfile(self.pidfile):
                         sys.stdout.write("Done ...     \n")
+                        sys.stdout.flush()
                         sys.exit(0) 
             else:
-                print "Could not send signal shutdown. break ..."
+                print "Could not send signal shutdown."
 
     def kvm_kill(self):
         """
@@ -122,7 +125,7 @@ class Kvm(KvmMonitor):
         Dangerous option, its simply like pull the power cable out.
         """
         if not self._is_running():
-            print "Could not kill guest. Not running ..."
+            print "Guest is not running."
         else:
             if os.path.isfile(self.pidfile):
                 fd = open(self.pidfile, "r")
@@ -143,7 +146,7 @@ class Kvm(KvmMonitor):
         """
         if self._is_running():
             process = self._get_process_information()
-            print self._guest_status
+            print "%s" % process["status"]
             print "Guest uuid: %s" % process['uuid']
             print "State: %s" % process['state']
             print "User: %s ::  Groups: %s" % (process['user'], process['groups'])
@@ -154,27 +157,9 @@ class Kvm(KvmMonitor):
             print "Start: %s" % process['start']
             print "Time: %s" % process['time']
         else:
-            print "No guest information through monitor available."
+            print "Guest is not running."
     
     # from here the internal methodes begin
-    def _check_is_running_through_monitor(self):
-        """
-        Check if the guest running or paused and return True or False.
-        Use qemu monitor status.
-        """
-        if self.monitor_send(self.qemu_monitor["status"]):
-            data = self.monitor_recieve()[0]
-            # clear monitor
-            self.monitor_send("")
-            if "running" in data:
-                self._guest_status = data
-                return True
-            elif "paused" in data:
-                self._quest_status = data
-                return True
-        else:
-            return False
-
     def _check_is_running_through_system(self):
         """
         Check if the process is running throug system information.
@@ -203,7 +188,7 @@ class Kvm(KvmMonitor):
             try:
                 # check if process alive
                 signal = os.kill(self._pid, 0)
-            except OSError, e:
+            except OSError:
                 return False
             else:   
                 return True
@@ -218,24 +203,32 @@ class Kvm(KvmMonitor):
         uuid = self.monitor_recieve()[0]
         return uuid
 
+    def _get_status(self):
+        """
+        Return the status from guest
+        """
+        self.monitor_send(self.qemu_monitor["status"])
+        status = self.monitor_recieve()[0]
+        return status
+
     def _is_running(self):
         """
         Avoid killing the socket connection, if call boot twice or more on a 
         running guest.
         """
-        if self._check_is_running_through_monitor() or\
-            self._check_is_running_through_pid() or\
-            self._check_is_running_through_system():
+        if self._check_is_running_through_pid():
+            return True
+        elif self._check_is_running_through_system():
             return True 
         else:
             try:
                 os.remove(self.pidfile)
                 os.remove(self.socketfile)
-            except OSError, e:
+            except:
                 # silent throw the error
                 pass
-            return False
-
+            else:
+                return False
 
     def _get_process_information(self):
         """
@@ -244,6 +237,7 @@ class Kvm(KvmMonitor):
         from subprocess import Popen, PIPE
         process = {}
         process['uuid'] = self._get_uuid()
+        process['status'] = self._get_status()
         try:
             # find data from process using ps and grep
             ps = Popen(["ps", "aux"], stdout=PIPE)
@@ -307,10 +301,8 @@ def main():
         action = sys.argv[2]
         pid = "/var/run/kvm/%s.pid" % guest
         socket = "/var/run/kvm/%s.socket" % guest
-        print "Instancied Kvm()"
         kvm = Kvm(pid, socket)
         kvm.guest = guest
-        # open socket to monitor
         if action == "shutdown":
             kvm.kvm_shutdown()
         if action == "status":
