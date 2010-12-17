@@ -72,7 +72,7 @@ class KvmMonitor(object):
         else:
             return False
 
-    def monitor_recieve(self, buffer=4096):
+    def monitor_recieve(self, buffer=4098):
         """
         Recieve data from socket and return a list.
         """
@@ -80,12 +80,23 @@ class KvmMonitor(object):
         if self.socket_status:
             data = self.socket.recv(buffer)
             data = data.split("\r\n")
-            counter = self.recieve_data['data_offset_start']
-            if len(data) > self.recieve_data['data_offset_start']:
-                while counter < len(data)-1:
-                    result.append(data[counter])
-                    counter += 1
-                return result
+            # have to do this check because second call does not send
+            # the qemu info string
+            if data[0].startswith("QEMU"):
+                counter = self.recieve_data['data_offset_start']
+                if len(data) > self.recieve_data['data_offset_start']:
+                    while counter < len(data)-1:
+                        result.append(data[counter])
+                        counter += 1
+                    return result
+            else:                    
+                counter = self.recieve_data['data_offset_start']-1
+                if len(data) > self.recieve_data['data_offset_start']-1:
+                    while counter < len(data)-1:
+                        result.append(data[counter])
+                        counter += 1
+                    return result
+                    
         else:
             return False 
             
