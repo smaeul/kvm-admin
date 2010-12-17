@@ -41,8 +41,14 @@ class KvmAdmin(object):
         self._global_config_dir = 'config'  # directory name to store global config file
         self._global_config = 'kvm.cfg'     # name for global configuration file
         self._show_config_argument = "show" # argument to show the string which should execute
+        self._kvm_prefix = "kvm_"          # all methodes which do some action have this prefix 
+        self._manange_prefix = "manage_"   # all methodes which do some admin tasks have this prefix
+        # this options are using internal only
+        self.exclude_options = ['qemu-kvm', 'python-debug']
+       
         self.config = {}                    # contain all config variables
         self.bridge = {}                    # contain all bridges to export them
+        self.debug = True                  # only usefull for editing the python script
         # set the path to work on any directory
         if self._base_dir is not os.path.dirname(os.path.realpath(sys.argv[0])):
             self._base_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
@@ -102,10 +108,9 @@ class KvmAdmin(object):
         Return all methods which start with _kvm_ from class Kvm.
         """
         actions = [self._show_config_argument]  # add action for show only the string
-        prefix = "_kvm_"
         for action in dir(Kvm):
-            if action.startswith(prefix):
-                actions.append(action.replace(prefix, ""))
+            if action.startswith(self._kvm_prefix):
+                actions.append(action.replace(self._kvm_prefix, ""))
         if len(actions) >= 2:
             return actions
         else:
@@ -139,7 +144,6 @@ class KvmAdmin(object):
         Examine the -net tap option for ifname and additional scripts and 
         bridge strings.
         """
-        import re
         temp = {} 
         for key, value in self.config["net"].iteritems():
             if value.startswith("tap"):
@@ -243,33 +247,72 @@ class KvmAdmin(object):
         self.add_monitor_to_config()
         self.add_pidfile_to_config()
         self.check_net_tap()    
-    
+        if "python-debug" in self.config and self.config["python-debug"] == "enabled":
+            self.debug = True
+
+    def _build_command(self):
+        """
+        Return a tuple.
+        First entry is a list to execute via subprocess
+        and the second is a string to display it.
+        """
+        # import the auto generatet qemu-kvm options from kvm --help
+        from kvmtools.qemu_kvm_options import qemu_kvm_options
+        self.load_config()
+        cmd_execute = []
+        cmd_string = ""
+        # Start to build a list, firstly add the qemu-kvm binary
+        cmd_execute.append(self.config["qemu-kvm"])
+        # then remove internal option  
+        for key in self.exclude_options:
+            if key in self.config:
+                del self.config[key]
+        # iterate over the user config
+        for key, value in self.config.iteritems():
+            # check if key is in qemu_kvm_options
+            if key in qemu_kvm_options:
+                # this check search for more option like -drive -drive etc.
+                if isinstance(value, dict):
+                    for i in value.itervalues():
+                        cmd_execute.append(''.join(['-', key]))
+                        cmd_execute.append(i)
+                elif "enabled" != value:
+                    # this qemu-kvm option have an option, so add -key value
+                    cmd_execute.append(''.join(['-', key]))
+                    cmd_execute.append(value)
+                else:
+                    # this qemu-kvm option don't have any option 
+                    # so only add -key as argument
+                    cmd_execute.append(''.join(['-', key]))
+            else: 
+                msg = "This option '%s' is not valid for qemu-kvm command." % key
+                raise Exception(msg)
+        # build a string for to display on terminal output
+        cmd_string = " ".join([value for value in cmd_execute])
+        return (cmd_execute, cmd_string)
+
     def run(self):
         """
         Do an action for a guest domain.
         Call a method based on commandline argument two.
         """
-        self.load_config()
-        kvm_method = "".join(["_kvm_", self.action])
-        kvm = Kvm(self.get_pidfile(), self.get_socketfile())
-        cmd = kvm.build_command(self.config)
+        kvm_method = "".join([self._kvm_prefix, self.action])
+        kvm = Kvm(self.guest, self.get_pidfile(), self.get_socketfile())
         if self._show_config_argument == self.action:
+            cmd = self._build_command()
             print "This string would executed:\n%s" % cmd[1]
         elif "boot" == self.action:
+            cmd = self._build_command()
             getattr(kvm, kvm_method)(cmd[0], self.bridge)
         elif "monitor" in self.action:
             if len(sys.argv) >= 4:
-                kvm.open()
                 # build string from third argument till end
                 cmd_monitor = " ".join(str(i) for i in self.monitor)
                 getattr(kvm, kvm_method)(cmd_monitor)
-                kvm.close()
             else:
-                raise Exception("Missing argument for monitor. Type 'help' as argument.")
+                print "Missing argument for monitor. Type 'help' as argument."
         else:
-            kvm.open()
             getattr(kvm, kvm_method)()
-            kvm.close()
 
 def main():
     # check python version, argparse was added in python 2.7 and 3.2
@@ -299,10 +342,10 @@ def main():
         # run the action
         kvm.run()
     except Exception, e:
-        if "debug" in kvm.config and kvm.config["debug"] == "enabled":
+        if kvm.debug:
             raise 
         else:
-            print e
+            print str(e)
 
 
 if __name__ == "__main__":
