@@ -146,37 +146,17 @@ class Kvm(KvmMonitor):
         """
         if self._is_running():
             process = self._get_process_information()
-            print "%s" % process["status"]
-            print "Guest uuid: %s" % process['uuid']
-            print "State: %s" % process['state']
-            print "User: %s ::  Groups: %s" % (process['user'], process['groups'])
-            print "UID: %s :: GID: %s" % (process['uid'], process['gid'])
-            print "PID: %s :: PPID: %s" % (process['pid'], process['ppid'])
-            print "Cpu usage: %s%%" % process['cpu']
-            print "Memory usage: %s%%" % process['mem']
-            print "Start: %s" % process['start']
-            print "Time: %s" % process['time']
+            print "Name: %s" % process['Name']
+            print "%s" % process["Status"]
+            print "Guest uuid: %s" % process['Uuid']
+            print "State: %s" % process['State']
+            print "UID: %s" % process['Uid']
+            print "GID: %s" % process['Gid']
+            print "Groups: %s" % process['Groups']
+            print "PID: %s :: PPID: %s" % (process['Pid'], process['PPid'])
         else:
             print "Guest is not running."
     
-    # from here the internal methodes begin
-    def _check_is_running_through_system(self):
-        """
-        Check if the process is running throug system information.
-        """
-        ps = Popen(["ps", "aux"], stdout=PIPE)
-        result = Popen(["grep", "process=%s" % self.guest], stdin=ps.stdout, stdout=PIPE)
-        result = result.communicate()[0].split("\n")
-        if len(result) > 2:
-            self._pid =  "".join([result[0].split(" ")[6], "\n"])
-            print "Create new pidfile because no pidfile exists, but process is running."
-            fd = open(self.pidfile, "w")
-            fd.write(self._pid)
-            fd.close()
-            return True
-        else:
-            return False
-      
     def _check_is_running_through_pid(self):
         """
         Check if the process is running by a given pid.
@@ -190,7 +170,7 @@ class Kvm(KvmMonitor):
                 signal = os.kill(self._pid, 0)
             except OSError:
                 return False
-            else:   
+            else:
                 return True
         else:
             return False
@@ -218,8 +198,6 @@ class Kvm(KvmMonitor):
         """
         if self._check_is_running_through_pid():
             return True
-        elif self._check_is_running_through_system():
-            return True 
         else:
             try:
                 os.remove(self.pidfile)
@@ -236,35 +214,14 @@ class Kvm(KvmMonitor):
         """
         from subprocess import Popen, PIPE
         process = {}
-        process['uuid'] = self._get_uuid()
-        process['status'] = self._get_status()
+        process['Uuid'] = self._get_uuid()
+        process['Status'] = self._get_status()
         try:
-            # find data from process using ps and grep
-            ps = Popen(["ps", "aux"], stdout=PIPE)
-            grep = Popen(["grep", process['uuid']], stdin=ps.stdout, stdout=PIPE)
-            input, output = grep.communicate()
-            process_data = input.split("\n")[0].split(" ")
-            # clean process_data, remove empty value
-            process_data  = [i for i in process_data if len(i) > 0]
-            # assign values to dict process
-            process['user'] = process_data[0]
-            process['pid'] = process_data[1]
-            process['cpu'] = process_data[2]
-            process['mem'] = process_data[3]
-            process['start'] = process_data[8]
-            process['time'] = process_data[9]
-            # get more info about process from proc
-            fd = open(os.path.join("/proc", "%s/status" % process['pid']))
+            fd = open(os.path.join("/proc", "%d/status" % self._pid))
             lines = [line.strip().split(':') for line in fd.readlines()]
             fd.close()
-            # assign value to dict process
-            process['name'] = lines[0][1]
-            process['state'] = lines[1][1]
-            process['ppid'] = lines[4][1].replace('\t', '')
-            process['uid'] = lines[6][1].split('\t')[1]
-            process['gid'] = lines[7][1].split('\t')[1]
-            process['fdsize'] = lines[8][1]
-            process['groups'] = lines[9][1]
+            for i in lines:
+                process[i[0]] = i[1]
         except OSError, e:
             raise Exception(e)
         except IOError, e:
