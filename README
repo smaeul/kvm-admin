@@ -1,14 +1,16 @@
-Tool to use the command line string  per configuration file.
+Tool to use the command line options to boot, shutdown ...  for a guest
 
 When qemu-kvm change or add parameter, then call: 
-
-kvm-admin manage generate
+# Fix: add this on new kvm-tool manager
+    ./kvmtoot/generater_options.py doit
 
 This build a new list of all availables qemu-kvm options.
+This is needed to check if the given key in a configuration file 
+is a valid qemu-kvm option.
 
-The qemu-kvm option for monitor is using internal.
-So they has no function in the domain configuration file.
-The same is for the pidfile.
+The qemu-kvm option for monitor is using internal also the pidfile.
+As default this tool use the unix socket to for qemu-kvm monitor.
+But it can override in each guest configuration file.
 
 
 ############
@@ -16,52 +18,51 @@ The same is for the pidfile.
 ############
 
 The scripts can downloaded via webrowser.
-
-http://hg.kasten-edv.de/kvm-tools/
+    http://hg.kasten-edv.de/kvm-tools/
 
 and choose on of the the bz2, zip or gzip archiv link.
 
-or you can clone it.
-Its a mercurial repository.
+Or you can clone it from the repository.
+Its used the mercurial.
 
-# its create in the current working directory a directoy "kvm-tools"
-hg clone http://hg.kasten-edv.de/kvm-tools
-
-# then update to latest version
-# list all branches
-hg branches 
-# update branch
-hg update version-0.1.1
-
-The version number is changing from time to time, therefor use hg branches befor.
+Clone it in the current working directory
+and its create a directoy "kvm-tools".
+    hg clone http://hg.kasten-edv.de/kvm-tools
 
 
 ######################
 # System preparation #
 ######################
-This tool need the directory /var/run/kvm to write the pidfile and for creating the socket.
+
+This tool need the directory /var/run/kvm
+to write the pidfile and socketfile.
 
 As root user execute:
-#mkdir /var/run/kvm
+    mkdir /var/run/kvm
 
-When the kvm user should use as running the guest.
-Add the user kvm to your system and:
-#chown kvm:kvm /var/run/kvm
-#chmod 750 /var/run/kvm
+When an unprivileged user, as example 'kvm' should use for running the guest.
+Then add the user kvm to your system and:
+    chown kvm:kvm /var/run/kvm
+    chmod 750 /var/run/kvm
 
-The kvm kernel module should be loaded:
-#modpobe -v kvm-[intel|amd]
+The kvm kernel module should be loaded if it not already done.
+    modpobe -v kvm-[intel|amd]
 
 Also the tun kernel driver:
-#modprobe -v tun
+    modprobe -v tun
+
 
 I use the bridge_starter to prepar a local bridge.
-For exemple i have two network interfaces eth0, and eth1 and eth1 is for local network.
-The bridge_starter rename the eth1 to reth1 and create a new bridge eth1 and add reth1 to this bridge.
+For exemple i have two network interfaces eth0, and eth1 and eth1 
+is for local network.
+Than the bridge_starter rename the eth1 to reth1 and create a new bridge eth1 
+and add reth1 to this bridge.
 The bridge_stoper can undo this action.
 
 When a guest is using in a dmz then create a bridge dmz.
 Take a look how your distribution is managed it for you.
+
+Fix: kvm-tool will doit when is ready.
 
 
 ##############################
@@ -74,83 +75,103 @@ It take a qemu-kvm as variable and the add the value to them.
 The syntax values are 1:1 on commandline usage.
 Only the tap option have an internal value bridge=value which is added.
 
+Example guest system configuration file name my_first_gast:
+    # name of the guest domain
+    name = my_first_guest
 
-    Example guest system configuration file name my_first_gast:
+    # setup the drives
+    # first drive
+    drive = file=/home/kvm/my_testfile.img,if=virtio,index=0,boot=on,cache=none
+    # second drive 
+    drive = file=/home/kvm/my_swapfile.img,if=virtio,index=1,cache=none
 
-        # name of the guest domain
-        name = my_first_guest
+    # memory for using in the guest
+    m = 512
 
-        # setup the drives
-        drive = file=/home/kvm/my_testfile.img,if=virtio,index=0,boot=on,cache=none
-        drive = file=/home/kvm/my_swapfile.img,if=virtio,index=1,cache=none
+    # default language for keyboard
+    k = de
 
-        # memory for using in the guest
-        m = 512
+    # add more then one cpu to the guest
+    smp = 2
 
-        # default language for keyboard
-        k = de
+    # vnc port 5901 on the qemu-kvm host machine
+    # example usage: vncviever host_ip:5901 to obtain graphical output
+    vnc = :1
 
-        # add more then one cpu to the guest
-        smp = 2
+    # The scripts kvm-ifup and kvm-ifdown can add in script and scriptdown,
+    # but not have not mandatory.
+    # When is not set, is automatic added when net = tap option is in use.
+    # If your add your own script option this would be use.
+    # For use more then one bridge, the option ifname must have set on each 
+    # tap option.
+       
+    # first network interface
+    net = tap,ifname=my_iface_one,bridge=br0
+    net = nic,mac=00:50:11:22:33:00
 
-        # vnc port 5901 on the qemu-kvm host machine
-        # example usage: vncviever host_ip:5901 to obtain graphical output
-        vnc = :1
-
-        # The scripts kvm-ifup and kvm-ifdown can add in script and scriptdown,
-        # but not have not mandatory.
-        # When is not set, is automatic added when net = tap option is in use.
-        # If your add your own script option this would be use.
-        # For use more then one bridge, the option ifname must have set on each 
-        # tap option.
+    # second network interace 
+    net = nic,mac=00:50:11:22:33:01
+    net = tap,ifname=my_iface_two,bridge=br1
         
-        # first network interface
-        net = tap,ifname=my_iface_one,bridge=br0
-        net = nic,mac=00:50:11:22:33:00
+    # To run kvm guest, as unprivileged user add, but the user have to exists.
+    runsas = kvm
 
-        # second network interace 
-        net = nic,mac=00:50:11:22:33:01
-        net = tap,ifname=my_iface_two,bridge=br1
+    # override the pidfile, the directory have to writeable
+    pidfile = absolute_path_to_pidfile
+
+    # override the monitor, default is use the unix socket to connect to the
+    # qemu-kvm monitor. 
+    # when using tcp socket, each guest have to use a different port.
+    monitor = tcp,localhost,4444,server,nowait
+
+
+In the file /etc/kvm/config/kvm.cfg can put all global qemu-kvm options,
+which should be used on all guests, but each guest can overrride it 
+on his own configuration file.
+All qemu-kvm options which take arguments on a option,
+have to set to 'enabled' to use them.
         
-        #To run kvm guest, as unprivileged user add:
-        runsas = kvm
+Example kvm.cfg:
+    # have to set the absolute path to qemu-kvm binary
+    qemu-kvm = /usr/bin/kvm
 
-
-In the file /etc/kvm/config/kvm.cfg can put all other global qemu-kvm options.
-All qemu-kvm options which take no argument have to set to 'enabled' to use them.
+    # optional, run the process in daemon mode
+    daemonize = enabled
         
-    Example kvm.cfg:
+    # optional, disabled graphic output 
+    nographic = enabled
     
-        # run the process in daemon mode
-        daemonize = enabled
-        
-        # no graphic output, use vnc = for
-        nographic = enabled
+    # optional, use cpu typ 
+    cpu = core2duo
 
+    # optional, use localtime in guest
+    rtc = base=localtime
+
+    # optional, enabled it, to get the python script verbose while editing
+    # all is using an exception and no print statment
+    python-debug = enabled
 
 
 #########
 # Usage #
 #########
 
-For example, link the kvm-admin.py to /bin/kvm-admin.py
-ln -s /etc/kvm/kvm-admin.py /bin/kvm-admin
+For example, link the kvm-admin.py to /usr/bin/kvm-admin
+    ln -s /etc/kvm/kvm-admin.py /usr/bin/kvm-admin
 
-then:
-kvm-admin my_first_guest boot
-kvm-admin my_first_guest reboot
+Usage:
+    kvm-admin my_guest boot
+    kvm-admin my_guest reboot
+    kvm-admin my_guest status
+    kvm-admin my_guest shutdown (if sucess is return 0)
 
 You can directly communicate with the guest monitor.
 Each command behind the monitor concate to a string. No quotation is needed.
-
-kvm-admin my_first_guest monitor help
+    kvm-admin my__guest monitor help
 
 Reboot or shutdown or status can send via the monitor too.
-kvm-admin my_first_guest monitor system_powerdown
+    kvm-admin my_guest monitor system_powerdown
 
 You can use the command line monitor like orginal "ALT + CTRL + 2" monitor.
-Add an usb device or ecject cdrom etc.
-
-
-
+You can add an usb device or ecject cdrom etc.
 
