@@ -83,6 +83,9 @@ class KvmMonitor(object):
         if self.socket_status:
             self.socket.send(command)
             time.sleep(0.2)
+            return True
+        else:
+            return False
 
     def monitor_recieve(self, buffer=4098):
         """
