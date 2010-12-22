@@ -405,7 +405,6 @@ def main():
         if kvm.debug:
             raise 
         else:
-            raise
             print str(e)
 
 
