@@ -1,4 +1,21 @@
+############################
+# sample option for a disk #
+############################
 drive = file=/dev/mapper/VG-example,if=virtio,index=0,media=disk,boot=off,cache=none
+# sample option for a cdrom, can also be a second disk
 drive = file=/path/to/my_cd_img.iso,if=virtio,index=1,media=cdrom,boot=on
+
+########################
+# settings for network #
+########################
 net = nic
+# use tap device for briding
 net = tap,bridge=br0
+
+############################################################################
+# use monitor option other the default unix socket or override the default #
+############################################################################
+# example for overridding the default
+# monitor = unix,path_to_your_own_socketfile,server,nowait
+# use tcp socket, every guest have to use a different port
+monitor = tcp,localhost,4444,server,nowait
