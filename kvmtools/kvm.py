@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Provide the action method for a guest.
+Provide the action methodes for a guest.
 (c) 2007-2010 Jens Kasten <jens@kasten-edv.de> 
 """
 
@@ -18,17 +18,20 @@ class Kvm(KvmMonitor):
     Class Kvm provide methodes for start, stop and all stuff around this.
     """
 
-    def __init__(self, guest, pidfile, socketfile):
+    def __init__(self, guest, pidfile, monitor):
         """
         Konstructor.
         """
+        self._environ_path = "/bin:/usr/bin/:/sbin:/usr/sbin"
         self._pid = None
         self._guest_status = None
         self.guest = guest
         self.pidfile = pidfile
-        self.socketfile = socketfile
-        # call the parent constructor
-        KvmMonitor.__init__(self)
+        self.socketfile = None
+        if "SocketFile" in monitor:
+            self.socketfile = monitor['SocketFile']
+        # call the parent constructor 
+        KvmMonitor.__init__(self, monitor)
     
     def __del__(self):
         """
@@ -36,7 +39,6 @@ class Kvm(KvmMonitor):
         """
         KvmMonitor.__del__(self)
     
-
     def kvm_monitor(self, command_monitor):
         """
         Monitor to the qemu-kvm guest on commandline.
@@ -53,12 +55,13 @@ class Kvm(KvmMonitor):
         """
         Boot the qemu-kvm guest. 
         """
-        if self._is_running():
-            print "Guest is already running."
-        else:
+        if not self._is_running():
             env = {} 
+            #env['PATH'] = self._environ_path
+            # Fix: add only nessesary path options
             env = os.environ.copy()
-            # add the bridge(s) to the enviroment, so the kvm-if[up|down] can use them
+            # add the bridge(s) to the enviroment,
+            # so the kvm-if[up|down] can use them
             if len(bridge) > 0:
                 for key, value in bridge.iteritems():
                     env[key] = value
@@ -72,6 +75,8 @@ class Kvm(KvmMonitor):
                 return False
             else:
                 print "Starting guest ..." 
+        else:
+            print "Guest is already running."
 
     def kvm_reboot(self):
         """
@@ -92,9 +97,7 @@ class Kvm(KvmMonitor):
         but not on linux when the Xserver is looked.
         """
         flag = 0
-        if not self._is_running():
-            print "Guest not running."
-        else:
+        if self._is_running():
             from time import sleep
             if self.monitor_send(self.qemu_monitor["shutdown"]):
                 self.monitor_send(self.qemu_monitor["enter"])
@@ -118,15 +121,15 @@ class Kvm(KvmMonitor):
                         sys.exit(0) 
             else:
                 print "Could not send signal shutdown."
+        else:
+            print "Guest is not running."
 
     def kvm_kill(self):
         """
         Kill the guest.
         Dangerous option, its simply like pull the power cable out.
         """
-        if not self._is_running():
-            print "Guest is not running."
-        else:
+        if self._is_running():
             if os.path.isfile(self.pidfile):
                 fd = open(self.pidfile, "r")
                 pid = int(fd.readline().strip())
@@ -136,9 +139,12 @@ class Kvm(KvmMonitor):
             try:    
                 os.kill(pid, 15)
                 os.remove(self.pidfile)
-                os.remove(self.socketfile)
+                if self.socketfile:
+                    os.remove(self.socketfile)
             except OSError, e:
                  print e
+        else:
+            print "Guest is not running."
    
     def kvm_status(self):
         """
@@ -201,10 +207,11 @@ class Kvm(KvmMonitor):
         else:
             try:
                 os.remove(self.pidfile)
-                os.remove(self.socketfile)
+                if self.socketfile:
+                    os.remove(self.socketfile)
             except:
                 # silent throw the error
-                pass
+                return False
             else:
                 return False
 
@@ -229,36 +236,16 @@ class Kvm(KvmMonitor):
         else:
             return process
 
-    def _emerge_socket(self, command):
-        """
-        Use if the socket was removed.
-        """
-        command = "info status"
-        from time import sleep
-        import socket
-        self._is_running()
-        print self._pid
-        if self._pid:
-            # search for socket in /proc/pid/fd
-            socketfile = "/proc/" + str(self._pid) + "/fd/3"
-            print socketfile
-            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            sock.connect(socketfile)
-            sock.send(command + "\n")
-            sleep(0.2)
-            data = sock.recv(4096)
-            data = data.split("\r\n")
-            print data
-            
-
-
 def main():
     if len(sys.argv) == 3:
         guest = sys.argv[1]
         action = sys.argv[2]
         pid = "/var/run/kvm/%s.pid" % guest
         socket = "/var/run/kvm/%s.socket" % guest
-        kvm = Kvm(pid, socket)
+        monitor = {}
+        monitor['Type'] = "unix"
+        monitor['SocketFile'] = socket
+        kvm = Kvm(guest, pid, socket)
         kvm.guest = guest
         if action == "shutdown":
             kvm.kvm_shutdown()
@@ -270,8 +257,6 @@ def main():
             kvm.kvm_reboot()
         if action == "kill":
             kvm.kvm_kill()
-        if action == "emerge":
-            kvm._emerge_socket("info status")
     else:
         print "Usage: %s guest_name action" % (sys.argv[0])
 
