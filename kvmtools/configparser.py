@@ -44,8 +44,21 @@ class Parser:
         else:
             try:
                 fd = open(config_name)
-                # add lines to a list and remove all withespaces 
-                self.config_lines = [re.sub(r'\s', '', line) for line in fd]
+                lines = fd.readlines()
+                # remove withespace but not and arguments 
+                # and add them to a list
+                for line in lines:
+                    if len(line) > 1 and not line.startswith('#'):
+                        # split only the first equal sign
+                        temp = line.strip().split("=", 1)
+                        # remove all withespace from string
+                        temp_first = re.sub(r'\s', '', temp[0])
+                        # remove only the withspace on the beginning and the end
+                        temp_second = temp[1].lstrip(' ')#.rstrip(' ')
+                        # put the cleaned string together again
+                        # FIX: configparser have to revisit 
+                        temp_result = "=".join([temp_first, temp_second])
+                        self.config_lines.append(temp_result)
                 fd.close()
             except OSError, e:
                 print str(e)
