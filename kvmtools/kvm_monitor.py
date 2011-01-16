@@ -81,9 +81,16 @@ class KvmMonitor(object):
         if raw:
             command = '%s\n' % command
         if self.socket_status:
-            self.socket.send(command)
-            time.sleep(0.2)
-            return True
+            try:
+                self.socket.send(command)
+                time.sleep(0.2)
+                return True
+            except socket.error, e:
+                from sys import exit
+                if e[0] == 32:
+                    print "Could not send data to socket."
+                print e[1]
+                return False
         else:
             return False
 
@@ -94,6 +101,8 @@ class KvmMonitor(object):
         result = []
         if self.socket_status:
             data = self.socket.recv(buffer)
+            if len(data) == 0:
+                 return ['No data available']
             data = data.split("\r\n")
             # have to do this check because second call does not send
             # the qemu info string
