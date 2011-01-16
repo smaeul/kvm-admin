@@ -2,7 +2,7 @@ Tool to use the command line options to boot, shutdown ...  for a guest
 
 When qemu-kvm change or add parameter, then call: 
 # Fix: add this on new kvm-tool manager
-    ./kvmtoot/generater_options.py doit
+    ./kvmtools/generater_options.py doit
 
 This build a new list of all availables qemu-kvm options.
 This is needed to check if the given key in a configuration file 
@@ -20,7 +20,7 @@ But it can override in each guest configuration file.
 The scripts can downloaded via webrowser.
     http://hg.kasten-edv.de/kvm-tools/
 
-and choose on of the the bz2, zip or gzip archiv link.
+and choose one of the compressed bz2, zip or gzip archiv link.
 
 Or you can clone it from the repository.
 Its used the mercurial.
@@ -29,28 +29,34 @@ Clone it in the current working directory
 and its create a directoy "kvm-tools".
     hg clone http://hg.kasten-edv.de/kvm-tools
 
+################
+# Installation #
+################
+See INSTALL file.
+The install direction of the file can places on different location.
+Some distributions install the python module which use distutils or setuptools
+in /usr/local instead /usr.
+See debian for example, they use /usr/local.
+So all file will copied in /usr/local.
+/usr/local/etc/kvm for configs 
+/usr/local/var/run/kvm for pidfiles and sockets
+/usr/local/lib/python-[version number/site-packages/kvmtools for python modules
+
+Remember the paths if it on /usr/local installed has added to use them.
 
 ######################
 # System preparation #
 ######################
-
-This tool need the directory /var/run/kvm
-to write the pidfile and socketfile.
-
-As root user execute:
-    mkdir /var/run/kvm
-
 When an unprivileged user, as example 'kvm' should use for running the guest.
 Then add the user kvm to your system and:
-    chown kvm:kvm /var/run/kvm
-    chmod 750 /var/run/kvm
+    chown kvm:kvm /var/run/kvm or /usr/local/var/run/kvm
+    chmod 750 /var/run/kvm or /usr/local/var/run/kvm
 
 The kvm kernel module should be loaded if it not already done.
     modpobe -v kvm-[intel|amd]
 
 Also the tun kernel driver:
     modprobe -v tun
-
 
 I use the bridge_starter to prepar a local bridge.
 For exemple i have two network interfaces eth0, and eth1 and eth1 
@@ -64,16 +70,14 @@ Take a look how your distribution is managed it for you.
 
 Fix: kvm-tool will doit when is ready.
 
-
 ##############################
 # Configuration from a guest #
 ##############################
-
 An example for a domain configuration file.
 Its places in directory domains.
 It take a qemu-kvm as variable and the add the value to them.
 The syntax values are 1:1 on commandline usage.
-Only the tap option have an internal value bridge=value which is added.
+Only when the tap option is use then value bridge=value must add on it.
 
 Example guest system configuration file name my_first_gast:
     # name of the guest domain
@@ -125,10 +129,10 @@ Example guest system configuration file name my_first_gast:
     monitor = tcp,localhost,4444,server,nowait
 
 
-In the file /etc/kvm/config/kvm.cfg can put all global qemu-kvm options,
+In the configuration file {/usr/local}/etc/kvm/config/kvm.cfg can put all global qemu-kvm options,
 which should be used on all guests, but each guest can overrride it 
 on his own configuration file.
-All qemu-kvm options which take arguments on a option,
+All qemu-kvm options which have no options,
 have to set to 'enabled' to use them.
         
 Example kvm.cfg:
@@ -155,10 +159,6 @@ Example kvm.cfg:
 #########
 # Usage #
 #########
-
-For example, link the kvm-admin.py to /usr/bin/kvm-admin
-    ln -s /etc/kvm/kvm-admin.py /usr/bin/kvm-admin
-
 Usage:
     kvm-admin my_guest boot
     kvm-admin my_guest reboot
@@ -166,12 +166,13 @@ Usage:
     kvm-admin my_guest shutdown (if sucess is return 0)
 
 You can directly communicate with the guest monitor.
-Each command behind the monitor concate to a string. No quotation is needed.
-    kvm-admin my__guest monitor help
+Each command behind the monitor concate to a string. No quotations are needed.
+    kvm-admin my_guest monitor help
 
 Reboot or shutdown or status can send via the monitor too.
     kvm-admin my_guest monitor system_powerdown
 
 You can use the command line monitor like orginal "ALT + CTRL + 2" monitor.
 You can add an usb device or ecject cdrom etc.
+
 
