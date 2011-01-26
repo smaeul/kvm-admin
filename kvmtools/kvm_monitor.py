@@ -99,10 +99,11 @@ class KvmMonitor(object):
         Recieve data from socket and return a list.
         """
         result = []
+        no_result = ['No data available']
         if self.socket_status:
             data = self.socket.recv(buffer)
             if len(data) == 0:
-                 return ['No data available']
+                 return no_result
             data = data.split("\r\n")
             # have to do this check because second call does not send
             # the qemu info string
@@ -120,8 +121,9 @@ class KvmMonitor(object):
                         result.append(data[counter])
                         counter += 1
                     return result
+            return no_result        
         else:
-            return ['No data available.'] 
+            return no_result
             
 
 def main():
