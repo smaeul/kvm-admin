@@ -269,7 +269,7 @@ class KvmAdmin(object):
         Append a name for window title and process name (on linux only).
         """
         if "name" in self.config:
-            process_name = "=".join(["process", self.config["name"]])
+            process_name = "=kvm_".join(["process", self.config["name"]])
             self.config["name"] = ",".join([self.config["name"], process_name])
         else:
             process_name = "=".join(["process", self.guest])
