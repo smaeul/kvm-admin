@@ -155,6 +155,18 @@ Example kvm.cfg:
     # all is using an exception and no print statment
     python-debug = enabled
 
+########################
+# Hotplug a pci device #
+########################
+To hotplug a pci device in a guest the guest must load the module:
+modprobe -v acpihp
+modprobe -v pci_hotplug 
+
+To use the monitor:
+    (add a nic to guest)
+    kvm-admin my_guest monitor pci_add auto nic model=e1000
+    (add a harddrive to guest)
+    kvm-admin my_guest monitor pci_add auto storage file=/path/to/partion_or_file,if=virtio
 
 #########
 # Usage #
