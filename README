@@ -159,7 +159,7 @@ Example kvm.cfg:
 # Hotplug a pci device #
 ########################
 To hotplug a pci device in a guest the guest must load the module:
-modprobe -v acpihp
+modprobe -v acpiphp
 modprobe -v pci_hotplug 
 
 To use the monitor:
