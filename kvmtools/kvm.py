@@ -1,14 +1,15 @@
 #!/usr/bin/env python
+#
+# Module provide the action methodes for a guest.
+#
 
 """
-Provide the action methodes for a guest.
-(c) 2007-2010 Jens Kasten <jens@kasten-edv.de> 
+(c) 2007-2011 Jens Kasten <jens@kasten-edv.de> 
 """
 
 import os
 import sys
 from subprocess import Popen, PIPE
-
 
 from kvm_monitor import KvmMonitor
 
@@ -18,14 +19,12 @@ class Kvm(KvmMonitor):
     Class Kvm provide methodes for start, stop and all stuff around this.
     """
 
-    def __init__(self, guest, pidfile, monitor):
-        """
-        Konstructor.
-        """
+    def __init__(self, guest, uuid, pidfile, monitor):
         self._environ_path = "/bin:/usr/bin/:/sbin:/usr/sbin"
         self._pid = None
         self._guest_status = None
         self.guest = guest
+        self.uuid = uuid
         self.pidfile = pidfile
         self.socketfile = None
         if "SocketFile" in monitor:
@@ -34,15 +33,10 @@ class Kvm(KvmMonitor):
         KvmMonitor.__init__(self, monitor)
     
     def __del__(self):
-        """
-        Destructor.
-        """
         KvmMonitor.__del__(self)
     
     def kvm_monitor(self, command_monitor):
-        """
-        Monitor to the qemu-kvm guest on commandline.
-        """
+        """Monitor to the qemu-kvm guest on commandline."""
         if self._is_running():
             self.monitor_send(command_monitor)
             data = self.monitor_recieve()
@@ -52,9 +46,7 @@ class Kvm(KvmMonitor):
             print "Guest is not running."
 
     def kvm_boot(self, cmd, bridge):
-        """
-        Boot the qemu-kvm guest. 
-        """
+        """Boot the qemu-kvm guest."""
         if not self._is_running():
             env = {} 
             #env['PATH'] = self._environ_path
@@ -67,6 +59,7 @@ class Kvm(KvmMonitor):
                     env[key] = value
             try:        
                 result = Popen(cmd, env=env, stdin=PIPE, stdout=PIPE)
+                result.wait()
             except OSError, e:
                 raise Exception(e)
                 return False
@@ -79,9 +72,7 @@ class Kvm(KvmMonitor):
             print "Guest is already running."
 
     def kvm_reboot(self):
-        """
-        Reboot the guest.
-        """
+        """Reboot the guest."""
         if self._is_running():
             if self.monitor_send(self.qemu_monitor["reboot"]):
                 print "Rebooting ..."
@@ -91,8 +82,7 @@ class Kvm(KvmMonitor):
             print "Guest is not running."
 
     def kvm_shutdown(self):
-        """
-        Shutdown the guest.
+        """Shutdown the guest.
         Its work for windows and linux guests, 
         but not on linux when the Xserver is looked.
         """
@@ -125,8 +115,7 @@ class Kvm(KvmMonitor):
             print "Guest is not running."
 
     def kvm_kill(self):
-        """
-        Kill the guest.
+        """Kill the guest.
         Dangerous option, its simply like pull the power cable out.
         """
         if self._is_running():
@@ -137,7 +126,7 @@ class Kvm(KvmMonitor):
             else:
                 pid = self._pid
             try:    
-                os.kill(pid, 15)
+                os.kill(pid, 9)
                 os.remove(self.pidfile)
                 if self.socketfile:
                     os.remove(self.socketfile)
@@ -147,12 +136,10 @@ class Kvm(KvmMonitor):
             print "Guest is not running."
    
     def kvm_status(self):
-        """
-        Show information about the guest.
-        """
+        """Show information about the guest."""
         if self._is_running():
             process = self._get_process_information()
-            print "Name: %s" % process['Name']
+            print "Name: %s" % process['Name'].split("[")[0]
             print "%s" % process["Status"]
             print "Guest uuid: %s" % process['Uuid']
             print "State: %s" % process['State']
@@ -160,13 +147,12 @@ class Kvm(KvmMonitor):
             print "GID: %s" % process['Gid']
             print "Groups: %s" % process['Groups']
             print "PID: %s :: PPID: %s" % (process['Pid'], process['PPid'])
+            print "VNC: %s" % process["VNC"]
         else:
             print "Guest is not running."
     
-    def _check_is_running_through_pid(self):
-        """
-        Check if the process is running by a given pid.
-        """
+    def _check_is_running(self):
+        """Check if the process is running by a given pid."""
         if os.path.isfile(self.pidfile):
             fd = open(self.pidfile)
             self._pid = int(fd.readline().strip())
@@ -174,35 +160,57 @@ class Kvm(KvmMonitor):
             try:
                 # check if process alive
                 signal = os.kill(self._pid, 0)
+                return True
             except OSError:
                 return False
-            else:
-                return True
         else:
-            return False
+            p1 = Popen(['ps', 'aux'], stdout=PIPE, stderr=PIPE)
+            search = "kvm_" + self.guest
+            p2 = Popen(['grep', search], stdin=p1.stdout, stdout=PIPE,
+                stderr=PIPE)
+            result = p2.communicate()
+            status = result[0].split("\n")
+            # search for pid
+            if len(status) > 1:
+                # iterate over the ps aux output per line
+                for i in status:
+                    if not "grep" in i:
+                        pid = i.split(" ")
+                        # remove first element, its the user name
+                        del pid[0]
+                        for j in pid:
+                            if len(j) == 0:
+                                continue
+                            else:
+                                # found it
+                                self._pid = int(j)
+                                return True
+            else:
+                return False
+
+    def _get_vnc(self):
+        self.monitor_send("info vnc")
+        vnc = self.monitor_recieve()
+        vnc = "\n".join(vnc)
+        return vnc
 
     def _get_uuid(self):
-        """
-        Return the guest uuid.
-        """
+        """Return the guest uuid."""
         self.monitor_send(self.qemu_monitor["uuid"])
         uuid = self.monitor_recieve()[0]
         return uuid
 
     def _get_status(self):
-        """
-        Return the status from guest
-        """
+        """Return the status from guest."""
         self.monitor_send(self.qemu_monitor["status"])
         status = self.monitor_recieve()[0]
         return status
 
     def _is_running(self):
+        """Avoid killing the socket connection, 
+        if call boot twice or more on a running guest.
         """
-        Avoid killing the socket connection, if call boot twice or more on a 
-        running guest.
-        """
-        if self._check_is_running_through_pid():
+        if self._check_is_running():
             return True
         else:
             try:
@@ -216,13 +224,12 @@ class Kvm(KvmMonitor):
                 return False
 
     def _get_process_information(self):
-        """
-        Collect process information from different sources.
-        """
+        """Collect process information from different sources."""
         from subprocess import Popen, PIPE
         process = {}
         process['Uuid'] = self._get_uuid()
         process['Status'] = self._get_status()
+        process["VNC"] = self._get_vnc()
         try:
             fd = open(os.path.join("/proc", "%d/status" % self._pid))
             lines = [line.strip().split(':') for line in fd.readlines()]

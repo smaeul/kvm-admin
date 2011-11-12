@@ -1,7 +1,10 @@
 #!/usr/bin/env python
+#
+# Module to handle the monitor stuff.
+#
 
 """
-Handle all the monitor stuff.
+(c) 2009-2011 Jens Kasten <jens@kasten-edv.de>
 """
 
 from os import path
@@ -49,10 +52,7 @@ class KvmMonitor(object):
     # monitor via unix socket or tcp socket #
     #########################################
     def _monitor_open(self):        
-        """
-        Open a socket to connect to the qemu-kvm monitor.
-        """
-        # Fix: raise a error message if connection fail
+        """Open a socket to connect to the qemu-kvm monitor."""
         if self._monitor['Type'] == 'unix': 
             self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             try:
@@ -69,15 +69,11 @@ class KvmMonitor(object):
                 return False
 
     def _monitor_close(self):
-        """
-        Close the socket. 
-        """    
+        """Close the opened socket connection."""    
         self.socket.close()
 
     def monitor_send(self, command, raw=True):
-        """
-        Send data to socket.
-        """
+        """Send data to socket."""
         if raw:
             command = '%s\n' % command
         if self.socket_status:
@@ -95,9 +91,7 @@ class KvmMonitor(object):
             return False
 
     def monitor_recieve(self, buffer=4098):
-        """
-        Recieve data from socket and return a list.
-        """
+        """Recieve data from socket and return it as a list."""
         result = []
         no_result = ['No data available']
         if self.socket_status:
@@ -110,9 +104,11 @@ class KvmMonitor(object):
             if data[0].startswith("QEMU"):
                 counter = self.recieve_data['data_offset_first_call']
                 if len(data) > self.recieve_data['data_offset_first_call']:
-                    while counter < len(data)-1:
+                    while counter < len(data) - 1:
                         result.append(data[counter])
                         counter += 1
+                    if len(result) == 0:
+                        result = ["Done"]
                     return result
             else:                    
                 counter = self.recieve_data['data_offset_second_call']
@@ -121,9 +117,7 @@ class KvmMonitor(object):
                         result.append(data[counter])
                         counter += 1
                     return result
-            return no_result        
-        else:
-            return no_result
+        return no_result        
             
 
 def main():
