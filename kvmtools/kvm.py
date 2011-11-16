@@ -10,6 +10,7 @@
 import os
 import sys
 from subprocess import Popen, PIPE
+from time import sleep
 
 from kvm_monitor import KvmMonitor
 
@@ -31,7 +32,7 @@ class Kvm(KvmMonitor):
             self.socketfile = monitor['SocketFile']
         # call the parent constructor 
         KvmMonitor.__init__(self, monitor)
-    
+
     def __del__(self):
         KvmMonitor.__del__(self)
     
@@ -61,13 +62,16 @@ class Kvm(KvmMonitor):
                 result = Popen(cmd, env=env, stdin=PIPE, stdout=PIPE)
                 result.wait()
             except OSError, e:
-                raise Exception(e)
+                print "Starting guest. [FAIL]"
                 return False
             except IOError, e:
-                raise Exception(e)
+                print "Starting guest. [FAIL]"
                 return False
             else:
-                print "Starting guest ..." 
+                if self._is_running():
+                    print "Starting guest. [OK]" 
+                else:
+                    print "Starting guest. [FAIL]"
         else:
             print "Guest is already running."
 
@@ -88,7 +92,6 @@ class Kvm(KvmMonitor):
         """
         flag = 0
         if self._is_running():
-            from time import sleep
             if self.monitor_send(self.qemu_monitor["shutdown"]):
                 self.monitor_send(self.qemu_monitor["enter"])
                 print "Shutdown ..."
@@ -105,10 +108,13 @@ class Kvm(KvmMonitor):
                     sys.stdout.write("waiting ... %s\r" % sign)
                     sys.stdout.flush()
                     sleep(0.05)
+                    #if self._check_is_running():
                     if not os.path.isfile(self.pidfile):
-                        sys.stdout.write("Done ...     \n")
+                        sys.stdout.write("Done.         \n")
                         sys.stdout.flush()
                         sys.exit(0) 
+                    else:
+                        self._is_running()
             else:
                 print "Could not send signal shutdown."
         else:
@@ -119,22 +125,16 @@ class Kvm(KvmMonitor):
         Dangerous option, its simply like pull the power cable out.
         """
         if self._is_running():
-            if os.path.isfile(self.pidfile):
-                fd = open(self.pidfile, "r")
-                pid = int(fd.readline().strip())
-                fd.close
-            else:
-                pid = self._pid
             try:    
-                os.kill(pid, 9)
-                os.remove(self.pidfile)
-                if self.socketfile:
-                    os.remove(self.socketfile)
+                os.kill(self._pid, 9)
+                sleep(0.8)
+                if not self._is_running():
+                    print "Killed guest. [OK]"
             except OSError, e:
                  print e
         else:
             print "Guest is not running."
-   
+
     def kvm_status(self):
         """Show information about the guest."""
         if self._is_running():
@@ -150,18 +150,20 @@ class Kvm(KvmMonitor):
             print "VNC: %s" % process["VNC"]
         else:
             print "Guest is not running."
-    
+
     def _check_is_running(self):
-        """Check if the process is running by a given pid."""
+        """Check if the process is running by a given pidfile."""
         if os.path.isfile(self.pidfile):
-            fd = open(self.pidfile)
-            self._pid = int(fd.readline().strip())
-            fd.close()
+            with open(self.pidfile) as fd:
+                self._pid = int(fd.readline().strip())
+                fd.close()
+            # check if process alive
             try:
-                # check if process alive
                 signal = os.kill(self._pid, 0)
                 return True
-            except OSError:
+            except OSError, e:
+                return False
+            except IOError, e:
                 return False
         else:
             p1 = Popen(['ps', 'aux'], stdout=PIPE, stderr=PIPE)
@@ -179,14 +181,30 @@ class Kvm(KvmMonitor):
                         # remove first element, its the user name
                         del pid[0]
                         for j in pid:
-                            if len(j) == 0:
+                            if j == "":
                                 continue
                             else:
-                                # found it
+                                # found pid 
                                 self._pid = int(j)
                                 return True
+                return False
             else:
                 return False
+
+    def _is_running(self):
+        """Avoid killing the socket connection, 
+        if call boot twice or more on a running guest.
+        """
+        if self._check_is_running():
+            return True
+        else:
+            if os.path.isfile(self.pidfile):
+                os.remove(self.pidfile)
+            try:
+                os.remove(self.socketfile)
+            except OSError, e:
+                pass
+            return False
 
     def _get_vnc(self):
         self.monitor_send("info vnc")
@@ -205,23 +223,6 @@ class Kvm(KvmMonitor):
         self.monitor_send(self.qemu_monitor["status"])
         status = self.monitor_recieve()[0]
         return status
-
-    def _is_running(self):
-        """Avoid killing the socket connection, 
-        if call boot twice or more on a running guest.
-        """
-        if self._check_is_running():
-            return True
-        else:
-            try:
-                os.remove(self.pidfile)
-                if self.socketfile:
-                    os.remove(self.socketfile)
-            except:
-                # silent throw the error
-                return False
-            else:
-                return False
 
     def _get_process_information(self):
         """Collect process information from different sources."""
