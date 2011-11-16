@@ -79,6 +79,7 @@ class KvmAdmin(object):
         the host and port.
         """
         if "monitor" in self.config:
+            
             _monitor = self.config["monitor"]
             # get the string befor the first comma 
             # and then split this string by colon
@@ -91,6 +92,8 @@ class KvmAdmin(object):
             elif len(_type) == 2:
                 # this is for telnet, when no port is given
                 self.monitor_options['Type'] = _type[0]
+                if _type[0] == 'unix':
+                    self.monitor_options['SocketFile'] = _type[1]
                 self.monitor_options['Host'] = _type[1]
                 self.monitor_options['Port'] = self._telnet_port
         else:
