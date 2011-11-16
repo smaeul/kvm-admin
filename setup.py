@@ -9,8 +9,6 @@ from distutils.file_util import copy_file
 from distutils.dir_util import copy_tree
 from distutils import log
 
-#sys.prefix = "/usr/local"
-
 
 def copy_files():
     kvm_config_path = "/etc/kvm"
@@ -40,35 +38,19 @@ def copy_files():
         print e[1]
         sys.exit()
 
-def make_backup():
-    try:
-        if os.path.isdir(kvm_config_path):
-            nr = int(time.time())
-            backup = "-".join([kvm_config_path, str(nr)])
-            print "Rename %s to %s" % (kvm_config_path, backup)
-            os.rename(kvm_config_path, backup)
-    except OSError, e:
-        print e[1]
-        sys.exit()
-    else:
-        print "Backup done..."
-
-
-if __name__ == "__main__":
-    #make_backup()
-    setup(
-        name = "kvm-tools",
-        version = "0.1.5",
-        author = "Jens Kasten",
-        author_email = "jens@kasten-edv.de",
-        description = ("Tool for managing kvm guests on commandline."),
-        packages = ["kvmtools", ],
+setup(
+    name = "kvm-tools",
+    version = "0.1.6",
+    author = "Jens Kasten",
+    author_email = "jens@kasten-edv.de",
+    description = ("Tool for managing kvm guests on commandline."),
+    packages = ["kvmtools", ],
         
-        classifiers = [
-            "Development Status :: 4 - Beta",
-            "Topic :: Utilities",
-            "License :: GPL3",
-        ],
-    )    
-    copy_files()
+    classifiers = [
+        "Development Status :: 3 - Beta",
+        "Topic :: Utilities",
+        "License :: GPL3",
+    ],
+)    
+copy_files()
 
