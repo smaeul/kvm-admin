@@ -230,10 +230,12 @@ class KvmAdmin(object):
         self.config["monitor"] = self._get_monitor() 
        
     def _add_pidfile_to_config(self):
-        """Append the pidfile option to the config dictionary."""
+        """Append the pidfile option to the config dictionary or reverse."""
         if "pidfile" not in self.config:
             pidfile = os.path.join(self._run_path, self.pidfile)
             self.config["pidfile"] = pidfile
+        else:
+            self.pidfile = self.config["pidfile"]
 
     def _add_uuid_to_config(self):
         """Append an unique uuid to the config dictionary."""
@@ -369,6 +371,7 @@ def main():
 
     group3 = parser.add_argument_group("Monitor command.")
     group3.add_argument("monitor", nargs="*", default=False,
+        metavar="option",
         help="One ore more arguments can pass to the monitor.")
    
     group4 = parser.add_argument_group("Qemu options")
