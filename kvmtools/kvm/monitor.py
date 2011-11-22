@@ -7,8 +7,6 @@
 (c) 2009-2011 Jens Kasten <jens@kasten-edv.de>
 """
 
-from os import path
-from sys import exit
 import socket
 import time
 
@@ -19,8 +17,9 @@ class KvmMonitor(object):
     Additional send data to and recieve data from monitor.
     """
 
-    def __init__(self, monitor):
-        self._monitor = monitor
+    def __init__(self):
+        # keep the socket
+        self.socket = None
         # flag if socket can acces
         self.socket_status = False
         # data for method socket_recieve
@@ -37,40 +36,37 @@ class KvmMonitor(object):
             "uuid": "info uuid",
             "network": "info network",
         }
-        try:
-            self._monitor_open()
-        except:
-            pass
+        self._monitor_open()
 
     def __del__(self):
-        try:
-            self.monitor_close()
-        except:
-            pass
+        """Close to socket when exit the program."""
+        self._monitor_close()
 
     #########################################
     # monitor via unix socket or tcp socket #
     #########################################
     def _monitor_open(self):        
         """Open a socket to connect to the qemu-kvm monitor."""
-        if self._monitor['Type'] == 'unix': 
+        if self.monitor_options['Type'] == 'unix': 
             self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             try:
-                self.socket.connect(self.socketfile)
+                self.socket.connect(self.kvm_socketfile)
                 self.socket_status = True
             except socket.error:
                 return False      
         else:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
-                self.socket.connect((self._monitor['Host'], self._monitor['Port']))
+                self.socket.connect((self.monitor_options['Host'], 
+                    self.monitor_options['Port']))
                 self.socket_status = True
             except socket.error:
                 return False
 
     def _monitor_close(self):
         """Close the opened socket connection."""    
-        self.socket.close()
+        if self.socket is not None:
+            self.socket.close()
 
     def monitor_send(self, command, raw=True):
         """Send data to socket."""
@@ -81,23 +77,22 @@ class KvmMonitor(object):
                 self.socket.send(command)
                 time.sleep(0.2)
                 return True
-            except socket.error, e:
-                from sys import exit
-                if e[0] == 32:
+            except socket.error, error_msg:
+                if error_msg[0] == 32:
                     print "Could not send data to socket."
-                print e[1]
+                print error_msg[1]
                 return False
         else:
             return False
 
-    def monitor_recieve(self, buffer=4098):
+    def monitor_recieve(self, socket_buffer=4098):
         """Recieve data from socket and return it as a list."""
         result = []
         no_result = ['No data available']
         if self.socket_status:
-            data = self.socket.recv(buffer)
+            data = self.socket.recv(socket_buffer)
             if len(data) == 0:
-                 return no_result
+                return no_result
             data = data.split("\r\n")
             # have to do this check because second call does not send
             # the qemu info string
@@ -117,13 +112,4 @@ class KvmMonitor(object):
                         result.append(data[counter])
                         counter += 1
                     return result
-        return no_result        
-            
-
-def main():
-    pass
-
-
-if __name__ == "__main__":
-    main()
-            
+        return no_result
