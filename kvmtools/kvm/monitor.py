@@ -11,7 +11,7 @@ import socket
 import time
 
 
-class KvmMonitor(object):
+class Monitor(object):
     """
     Class for connect and disconnect to a qemu monitor socket.
     Additional send data to and recieve data from monitor.

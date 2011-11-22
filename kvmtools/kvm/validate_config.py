@@ -12,8 +12,12 @@ import re
 try:
     from kvmtools.qemu_kvm_options import qemu_kvm_options
 except ImportError, error_msg:
-    print error_msg
-    sys.exit(1)
+    os.system("generate-kvm-options --generate")
+    try:
+        from kvmtools.qemu_kvm_options import qemu_kvm_options
+    except ImportError, error_msg:
+        print error_msg
+        sys.exit(1)
 
 
 class ValidateConfig(object):
@@ -60,7 +64,7 @@ class ValidateConfig(object):
                         value = re.sub("tap", "tap,%s", value) % temp_ifname
                     counter += 1
                 # build the bridge key    
-                bridge_key = "_".join(["bridge", ifname])
+                bridge_key = "_".join(["kvm_bridge", ifname])
                 # search for bridge otherwise raise an exception,
                 # because this value is needed
                 if re.search("bridge", value):
@@ -91,48 +95,3 @@ class ValidateConfig(object):
         # add the cleand temp dictionary back to config        
         self.config["net"] = temp
         return True
-    
-    def _get_pid(self):
-        """Set pif if pidfile is available"""
-        if os.path.isfile(self.kvm_pidfile):
-            with open(self.kvm_pidfile) as fd:
-                self.kvm_pid = int(fd.readline().strip())
-
-   
-    def _get_vnc(self):
-        """Return vnc info."""
-        self.monitor_send("info vnc")
-        vnc = self.monitor_recieve()
-        vnc = "\n".join(vnc)
-        return vnc
-
-    def _get_uuid(self):
-        """Return the guest uuid."""
-        self.monitor_send(self.qemu_monitor["uuid"])
-        uuid = self.monitor_recieve()[0]
-        return uuid
-
-    def _get_status(self):
-        """Return the status from guest."""
-        self.monitor_send(self.qemu_monitor["status"])
-        status = self.monitor_recieve()[0]
-        return status
-
-    def get_process_information(self):
-        """Collect process information from different sources."""
-        process = {}
-        process['Uuid'] = self._get_uuid()
-        process['Status'] = self._get_status()
-        process["VNC"] = self._get_vnc()
-        try:
-            _fd = open(os.path.join("/proc", "%d/status" % self.kvm_pid))
-            lines = [line.strip().split(':') for line in _fd.readlines()]
-            _fd.close()
-            for i in lines:
-                process[i[0]] = i[1]
-        except OSError, error_msg:
-            raise Exception(error_msg)
-        except IOError, error_msg:
-            raise Exception(error_msg)
-        else:
-            return process 

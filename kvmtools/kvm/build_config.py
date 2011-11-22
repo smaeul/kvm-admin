@@ -34,7 +34,6 @@ class BuildConfig(ValidateConfig):
         self._add_pidfile()
         self._add_monitor()
         self._check_net_tap()
-        self._get_pid()
 
     def _merge_configs(self, kvm_conf_file, kvm_domain_file):
         """Merge global and guest configfile.
@@ -69,11 +68,12 @@ class BuildConfig(ValidateConfig):
     def _add_name(self):
         """Append a name for window title and process name (on linux only)."""
         if "name" in self.config:
-            process_name = "=kvm_".join(["process", self.config["name"]])
-            self.config["name"] = ",".join([self.config["name"], process_name])
+            name = self.config["name"].split(" ")[0]
+            process_name = "=kvm_".join(["process", name])
+            self.config["name"] = ",".join([name, process_name])
         else:
-            process_name = "=".join(["process", self.guest])
-            self.config["name"] = ",".join([self.guest, process_name])
+            process_name = "=".join(["process", self.kvm_domain_name])
+            self.config["name"] = ",".join([self.kvm_domain_name, process_name])
 
     def _add_monitor(self):
         """Add a dictionry with type and the path to the socket file or

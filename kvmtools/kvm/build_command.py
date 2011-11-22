@@ -22,7 +22,7 @@ class BuildCommand(object):
         cmd_string = ""
         # Start to build a list, firstly add the qemu-kvm binary
         if "qemu-kvm" not in self.config:
-            return (False, "Need qemu-kvm = /path/to/kvm option in config.")
+            raise Exception("Need qemu-kvm = /path/to/kvm option in config.")
         cmd_execute.append(self.config["qemu-kvm"])
         for key in self.exclude_options:
             if key in self.config:
@@ -47,5 +47,3 @@ class BuildCommand(object):
         # build a string for to display on terminal output
         cmd_string = " ".join([value for value in cmd_execute])
         return (cmd_execute, cmd_string)
-
-

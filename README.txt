@@ -6,9 +6,8 @@ A commandline script to use a simple guest configuration file.
 usage: kvm-admin [-h] [--generate-options]
                  kvm_guest_name action [monitor [monitor ...]]
 
-depencies:
-	  python-argparse
-	  python-psutil 0.1.3 # test
+depencies: python-argparse 
+
 ======
 Update
 ======

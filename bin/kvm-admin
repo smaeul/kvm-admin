@@ -32,7 +32,7 @@ import sys
 import argparse
 import gettext
 
-from kvmtools.kvm.action import KvmAction
+from kvmtools.kvm.action import Action
 
 locale_app = sys.argv[0]
 if locale_app.endswith('.py'):
@@ -46,7 +46,7 @@ class KvmAdmin(object):
     """ Class for commandline usage for a qemu-kvm guest."""
 
     def __init__(self):
-        self.kvm_action = KvmAction()
+        self.kvm_action = Action()
         self.available_actions = self.kvm_action.available_actions()
 
     def run(self):
