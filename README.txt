@@ -6,11 +6,14 @@ A commandline script to use a simple guest configuration file.
 usage: kvm-admin [-h] [--generate-options]
                  kvm_guest_name action [monitor [monitor ...]]
 
+depencies:
+	  python-argparse
+	  python-psutil 0.1.3 # test
 ======
 Update
 ======
-When qemu-kvm change or add parameter, than the this options should added:
-	--generate
+When qemu-kvm change or add parameter, than the this run this command:
+	generate-kvm-options --generate
 
 This build a new list of all availables qemu-kvm options.
 This is needed to check if the given key in the configuration file 
@@ -27,7 +30,7 @@ Downlaod
 ========
 1. The scripts can downloaded via webrowser as bz2, zip, or gzip archive.
 	http://hg.kasten-edv.de/kvm-tools
-	https://hg.kasten-edv.de/kvm-tools
+	https://hg.kasten-edv.de/kvm-tools --insecure
 
 2. clone the mercurial repository. 
     hg clone http://hg.kasten-edv.de/kvm-tools  
@@ -82,7 +85,7 @@ This is used when the tap device should add to a bridge.
 The syntax to append to net = tap option is:
 	bridge=bridge_name 
 
-Example guest configuration file:
+Example domain configuration file:
     name = my_first_guest
     # first drive
     drive = file=/home/kvm/my_testfile.img,if=virtio,index=0,boot=on,cache=none
@@ -145,10 +148,10 @@ You can communicate with the guest monitor on commandline.
 Each command behind the monitor concatenate to a string. 
 No quotations are needed.
 
-usage: kvm-admin my_guest monitor help
+usage: kvm-admin domain_name monitor help
 
 Reboot or shutdown or status can send via the monitor too.
-    kvm-admin my_guest monitor system_powerdown
+    kvm-admin domain_name monitor system_powerdown
 
 You can use the command line monitor like orginal "ALT + CTRL + 2" monitor.
 You can add an usb device or ecject cdrom etc.
