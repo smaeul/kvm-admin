@@ -5,15 +5,13 @@ import os
 from subprocess import call
 
 def add_iface_to_bridge():
-    try:
-        iface = sys.argv[1]
-        bridge = os.environ["bridge_%s" % iface]
+    iface = sys.argv[1]
+    bridge = "kvm_bridge_%s" % iface
+    if bridge in os.environ:
+        bridge = os.environ[bridge]
         cmd = ["brctl", "addif", bridge, iface]
         call(cmd)
-        iface_up = ["ip", "link", "set", iface, "up"]
-        call(iface_up)
-    except KeyError, e:
-        print str(e)
-
+    iface_up = ["ip", "link", "set", iface, "up"]
+    call(iface_up)
 
 add_iface_to_bridge()    

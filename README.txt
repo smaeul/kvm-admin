@@ -3,14 +3,45 @@ kvm-tools
 =========
 A commandline script to use a simple guest configuration file.
 
+usage: kvm-admin [-h]
+                 domain_name
+                 {boot,create,kill,migrate,modify,monitor,reboot,show,shutdown,status}
+                 [option [option ...]]
+
+optional arguments:
+  -h, --help            show this help message and exit
+
+QEMU-KVM domain:
+  domain_name           Choose a KVM domain name, its the same like the
+                        configuration file name
+
+Action for a domain:
+  {boot,create,kill,migrate,modify,monitor,reboot,show,shutdown,status}
+                        Choose an action for the KVM guest
+
+Monitor command:
+  option                One ore more arguments can pass to the monitor.
+
 usage: kvm-admin [-h] [--generate-options]
                  kvm_guest_name action [monitor [monitor ...]]
+
+=========
+Depencies
+=========
+Python argparse is backported by debian to python version 2.6.
+
+List: python >=2.4 and < 3.0 
+      python-argparse 
+
+All others are standard python library.
 
 ======
 Update
 ======
-When qemu-kvm change or add parameter, than the this options should added:
-	--generate
+When qemu-kvm change or add parameter, than the this run this command:
+	generate-kvm-options --generate
+
+# Fix: and a config with current qemu-kvm verion and compare it each run
 
 This build a new list of all availables qemu-kvm options.
 This is needed to check if the given key in the configuration file 
@@ -20,14 +51,14 @@ is a valid qemu-kvm option.
 Info
 ====
 The qemu-kvm option for monitor, and pidfile has default values.
-But this options can override in each guest configuration file.
+But this options can be overriden in each domain configuration file.
 
 ========
 Downlaod
 ========
 1. The scripts can downloaded via webrowser as bz2, zip, or gzip archive.
 	http://hg.kasten-edv.de/kvm-tools
-	https://hg.kasten-edv.de/kvm-tools
+	https://hg.kasten-edv.de/kvm-tools --insecure
 
 2. clone the mercurial repository. 
     hg clone http://hg.kasten-edv.de/kvm-tools  
@@ -37,6 +68,7 @@ Downlaod
 Installation
 ============
 Look at INSTALL.txt.
+# Fix: debian package and new setup.py 
 
 ==================
 System preparation
@@ -48,7 +80,6 @@ Uncomment:
 	#runas = kvm
 
 Each guest configuration file can have this option too.
-
 
 Example to use a system user kvm on debian. If qemu-kvm is already installed, then add only the group kvm
 and modify the /etc/passwd.
@@ -77,13 +108,21 @@ The syntax values are 1:1 on commandline usage the only differ is instead using
 	-option_name value
 	option_name = value
 
-Its exists only one tap option.
-This is used when the tap device should add to a bridge.
+Its exists only one tap option, which has a extend attribute.
+This is used when the tap device should add to a bridge automatic.
 The syntax to append to net = tap option is:
-	bridge=bridge_name 
+    Example:
+	net = tap,bridge=bridge_name 
 
-Example guest configuration file:
-    name = my_first_guest
+For fist run, you can use:
+	kvm-admin my_new_domain create
+
+This build a very minimalistic domain config through a console based dialog.
+# Feature: build a python ncurses script
+
+
+Example domain configuration file:
+    name = my_first_domain
     # first drive
     drive = file=/home/kvm/my_testfile.img,if=virtio,index=0,boot=on,cache=none
     # second drive 
@@ -121,9 +160,6 @@ Example kvm.cfg:
     rtc = base=localtime
     # optinal, run as kvm user
     runas = kvm
-    # optional, enabled it, to get the python script verbose while editing
-    # all is using an exception and no print statment
-    python-debug = enabled
 
 ====================
 Hotplug a pci device
@@ -145,10 +181,10 @@ You can communicate with the guest monitor on commandline.
 Each command behind the monitor concatenate to a string. 
 No quotations are needed.
 
-usage: kvm-admin my_guest monitor help
+usage: kvm-admin domain_name monitor help
 
 Reboot or shutdown or status can send via the monitor too.
-    kvm-admin my_guest monitor system_powerdown
+    kvm-admin domain_name monitor system_powerdown
 
 You can use the command line monitor like orginal "ALT + CTRL + 2" monitor.
 You can add an usb device or ecject cdrom etc.
