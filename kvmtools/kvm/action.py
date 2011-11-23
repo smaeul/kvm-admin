@@ -95,6 +95,7 @@ class Action(Domain):
         """
         if not self.is_running():
             print ("Guest is not running.")
+            return
         flag = 0
         if self.monitor_send(self.qemu_monitor["shutdown"]):
             self.monitor_send(self.qemu_monitor["enter"])
