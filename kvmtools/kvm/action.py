@@ -148,13 +148,14 @@ class Action(Domain):
             print ("Guest is not running.")
             return False
         self.get_process_information()
-        print "Process name: %s" % self.kvm_process_name
-        print "%s" % self.kvm_process_status
-        print "Domain uuid: %s" % self.kvm_process_uuid
-        print "Process state: %s" % self.kvm_process_state
+        print ("Process name: %s" % self.kvm_process_name)
+        print ("Domain uuid:  %s" % self.kvm_process_uuid)
+        print ("%s :: Process state: %s" % (self.kvm_process_status,
+            self.kvm_process_state))
         print "UID: %s" % self.kvm_process_uid
         print "GID: %s" % self.kvm_process_gid
         print "Groups: %s" % self.kvm_process_groups
         print "PID: %s :: PPID: %s" % (self.kvm_process_pid, 
             self.kvm_process_ppid)
-        print "VNC: %s" % self.kvm_process_vnc
+        print ("VNC information")
+        print self.kvm_process_vnc

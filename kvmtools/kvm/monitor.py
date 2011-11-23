@@ -47,8 +47,9 @@ class Monitor(object):
             try:
                 self.socket.connect(self.kvm_socketfile)
                 self.socket_status = True
-            except socket.error:
-                return False      
+            except socket.error, error_msg:
+                if self.debug:
+                    self.kvm_error(error_msg)
         else:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:

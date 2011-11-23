@@ -46,8 +46,7 @@ class System(object):
         """Return vnc info."""
         self.monitor_send("info vnc")
         vnc = self.monitor_recieve()
-        vnc = "\n".join(vnc)
-        self.kvm_process_vnc = vnc
+        self.kvm_process_vnc = "\n".join(vnc)
 
     def _get_uuid(self):
         """Return the guest uuid."""

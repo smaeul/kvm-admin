@@ -102,13 +102,15 @@ class Parser(object):
     def merge_configs(self, config_one, config_two):
         """Merge two configs into a single one without duplications."""
         config = {}
-        if not config_one or not config_two:
-            return
+        if not config_one and not config_two:
+            return {}
+        if config_one and not config_two:
+            return config_none
+        if not config_one and config_two:
+            return config_two
         for key, value in config_one.iteritems():
             config[key] = value
         for key in config_two.keys():
             if key not in config_one:
                 config[key] = config_two[key]
         return config
-
-

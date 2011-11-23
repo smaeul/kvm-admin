@@ -44,6 +44,7 @@ class KvmAdmin(Action):
     def __init__(self):
         Action.__init__(self)
         self._args_value = None
+        self.debug = False
 
     def run(self):
         """Do an action for a domain.
@@ -108,6 +109,7 @@ def main():
         parser.error(_("Available domains: %s") % domains)
     kvm_admin.action = args.action
     kvm_admin.monitor = args.monitor
+    kvm_admin.debug = args.debug
     if not args.action == "modify" and kvm_admin.show_error() :
         sys.exit(1)
     if args.debug:
