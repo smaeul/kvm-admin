@@ -6,7 +6,6 @@
 #
 # Depencies:
 #           python-argparse
-#           python-psutil == 0.1.3 (debian squeeze)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,7 +52,7 @@ class KvmAdmin(Action):
         kvm_method = "".join(["kvm_", self.action, "_action"])
         self.monitor_open()
         if "monitor" in self.action or "migrate" in self.action:
-            if len(sys.argv) >= 4:
+            if self.monitor:
                 # build string from third option till end
                 cmd_monitor = " ".join(str(i) for i in self.monitor)
                 getattr(self, kvm_method)(cmd_monitor)
@@ -87,6 +86,8 @@ def main():
     # manage the arguments
     parser = argparse.ArgumentParser(
         epilog="Available domains: %s" % ", ".join(domains))
+    parser.add_argument("--debug", default=False, action="store_true",
+        help="Print full execption output.")
     group1 = parser.add_argument_group(_("QEMU-KVM domain"))
     group1.add_argument("domain", default=False,
         metavar=(_("domain_name")),
@@ -95,7 +96,7 @@ def main():
     group2 = parser.add_argument_group("Action for a domain")
     group2.add_argument("action", choices=actions, 
         help=_("Choose an action for the KVM guest"))
-    group3 = parser.add_argument_group("Monitor command")
+    group3 = parser.add_argument_group("Monitor commands")
     group3.add_argument("monitor", nargs="*", default=False,
         metavar="option",
         help=_("One ore more arguments can pass to the monitor."))
@@ -105,15 +106,19 @@ def main():
         kvm_admin.kvm_domain_name = args.domain
     else:
         parser.error(_("Available domains: %s") % domains)
-    
     kvm_admin.action = args.action
-    if args.monitor:
-        kvm_admin.monitor = args.monitor
+    kvm_admin.monitor = args.monitor
     if not args.action == "modify" and kvm_admin.show_error() :
         sys.exit(1)
-    kvm_admin.run()
-
-
+    if args.debug:
+        kvm_admin.run()
+    else:
+        try:
+            kvm_admin.run()
+        except Exception, error_msg:
+            print error_msg
+            
+        
 if __name__ == "__main__":
     try:
         main()
