@@ -6,18 +6,23 @@
 (c) 2011 Jens Kasten <jens@kasten-edv.de>
 """
 
+from kvmtools.kvm.build_config import BuildConfig
 
-class BuildCommand(object):
+
+class BuildCommand(BuildConfig):
     """Build command"""
     
     def __init__(self):
-        pass
+        BuildConfig.__init__(self)
+        self.commmand = ()
 
     def build_command(self):
         """Return a tuple. First entry is a list to execute via subprocess
         and the second is a string to display it.
         """
         self.build_config()
+        if self.config is None:
+            return None
         cmd_execute = []
         cmd_string = ""
         # Start to build a list, firstly add the qemu-kvm binary
@@ -46,4 +51,4 @@ class BuildCommand(object):
                 cmd_execute.append(''.join(['-', key]))
         # build a string for to display on terminal output
         cmd_string = " ".join([value for value in cmd_execute])
-        return (cmd_execute, cmd_string)
+        self.command = (cmd_execute, cmd_string)

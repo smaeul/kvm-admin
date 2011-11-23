@@ -18,11 +18,11 @@ class System(object):
 
     def avail_memory(self):
         """Return available system memory in megabyte."""
-        return 1111
+        return 0
 
     def total_memory(self):
         """Return total amount of system memory in megabyte."""
-        return 1222
+        return 0
 
     def get_cdrom(self):
         """Check if machine has a cdrom. Return the path to cdrom device."""

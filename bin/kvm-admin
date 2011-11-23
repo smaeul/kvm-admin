@@ -34,74 +34,84 @@ import gettext
 
 from kvmtools.kvm.action import Action
 
-locale_app = sys.argv[0]
-if locale_app.endswith('.py'):
-    locale_app = locale_app[:len(locale_app)-3]
-else:
-    t = gettext.translation(locale_app, "/usr/share/locale", fallback=True)
-    _ = t.ugettext
+LOCALEAPP = sys.argv[0]
+TRANSLATE = gettext.translation(LOCALEAPP, "/usr/share/locale", fallback=True)
+_ = TRANSLATE.ugettext
 
 
-class KvmAdmin(object):
+class KvmAdmin(Action):
     """ Class for commandline usage for a qemu-kvm guest."""
 
     def __init__(self):
-        self.kvm_action = Action()
-        self.available_actions = self.kvm_action.available_actions()
+        Action.__init__(self)
+        self._args_value = None
 
     def run(self):
         """Do an action for a domain.
         Call a method based on commandline option.
         """
-        self.kvm_action.kvm_domain_name = self.domain
-        self.kvm_action.load_command()
         kvm_method = "".join(["kvm_", self.action, "_action"])
+        self.monitor_open()
         if "monitor" in self.action or "migrate" in self.action:
             if len(sys.argv) >= 4:
                 # build string from third option till end
                 cmd_monitor = " ".join(str(i) for i in self.monitor)
-                getattr(self.kvm_action, kvm_method)(cmd_monitor)
+                getattr(self, kvm_method)(cmd_monitor)
             else:
                 raise Exception("Missing monitor argument. Type 'help'.")
         else:
-            getattr(self.kvm_action, kvm_method)()
+            getattr(self, kvm_method)()
+        self.monitor_close()
+
+    def show_error(self):
+        """Display errors if the registered."""
+        errors = self.kvm_errors
+        if len(errors) > 0:
+            for error in errors:
+                print error
+            return True
+
+    def _set(self, args_value):
+        self._args_value = args_value
+
+    def _get(self):
+        return self._args_value
+
 
 def main():
+    """Handle the commandline arguments."""
     kvm_admin = KvmAdmin()
-    actions = kvm_admin.available_actions
-        
+    actions = kvm_admin.available_actions()
+    domains = kvm_admin.kvm_domain_name_all
+   
     # manage the arguments
     parser = argparse.ArgumentParser(
-        epilog="Available action: %s" % ", ".join(actions))
-
+        epilog="Available domains: %s" % ", ".join(domains))
     group1 = parser.add_argument_group(_("QEMU-KVM domain"))
     group1.add_argument("domain", default=False,
         metavar=(_("domain_name")),
         help=_("Choose a KVM domain name, "
              "its the same like the configuration file name"))
     group2 = parser.add_argument_group("Action for a domain")
-    group2.add_argument("action", choices=actions, default=False, 
+    group2.add_argument("action", choices=actions, 
         help=_("Choose an action for the KVM guest"))
     group3 = parser.add_argument_group("Monitor command")
     group3.add_argument("monitor", nargs="*", default=False,
         metavar="option",
         help=_("One ore more arguments can pass to the monitor."))
-    group4 = parser.add_argument_group("Domain")
-    group4.add_argument("create", default=False, action="store_true",
-        help=_("Create a domain config file."))
-    group4.add_argument("modify", default=False, action="store_true",
-        help=_("Modify a domain config file."))
-    args = parser.parse_args(namespace=kvm_admin)
+    args = parser.parse_args()
 
-    if not kvm_admin.create:
-        if not kvm_adin.domain in domains:
-            parser.error(_("Available domains: %s") % domains)
-    # run the action
-    #try:
+    if args.action == "create" or args.domain in domains: 
+        kvm_admin.kvm_domain_name = args.domain
+    else:
+        parser.error(_("Available domains: %s") % domains)
+    
+    kvm_admin.action = args.action
+    if args.monitor:
+        kvm_admin.monitor = args.monitor
+    if not args.action == "modify" and kvm_admin.show_error() :
+        sys.exit(1)
     kvm_admin.run()
-#    except Exception, error_msg:
- #       print error_msg
-  #      sys.exit(1)
 
 
 if __name__ == "__main__":

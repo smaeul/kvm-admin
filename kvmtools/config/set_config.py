@@ -17,10 +17,12 @@
 
 import os
 
+from kvmtools.header import Header
 
-class SetConfig(object):
+class SetConfig(Header):
 
     def __init__(self):
+        Header.__init__(self)
         # initialize attribute
         self.kvm_domain_dir = None
         self.kvm_domain_name_all = []
@@ -101,6 +103,8 @@ class SetConfig(object):
                 "kvm_domain_file is None"
             self._set_kvm_pid_file()
             self._set_kvm_socket_file()
+            self.build_command()
+            self.get_pid()
 
     def _get(self):
         """Get property."""

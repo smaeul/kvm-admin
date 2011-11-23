@@ -6,15 +6,10 @@
 (c) 2011 Jens Kasten <jens@kasten-edv.de>
 """
 
-from kvmtools.system_utils import System
-
 
 class CreateDialogConsole(object):
     """Console dialog to create inital config file."""
     
-    def __init__(self):
-        self.system = System()
-
     def create_dialog(self, open_type="r"):
         """Methode to create a dialog for creating a domain config"""
         with open(self.kvm_domain_file, open_type) as _fd:
@@ -25,7 +20,7 @@ class CreateDialogConsole(object):
                 _fd.write("name = %s\n" % name)
             # set memory 
             print ("Total memory of the machine: %d" % \
-            self.system.total_memory())
+            self.total_memory())
             while True:
                 memory = raw_input("Memory in MB [%d]: " % 128)
                 if len(memory) == 0:
@@ -35,18 +30,18 @@ class CreateDialogConsole(object):
                     break
                 try:
                     memory = int(memory)
-                    if memory > self.system.total_memory():
+                    if memory > self.total_memory():
                         print ("Machine has not enough total memory %d." % \
-                            self.system.avail_memory())
+                            self.avail_memory())
                         accept = raw_input("Should this value used? [Y/n]:").lower()
                         if len(accept) == 0 or accept == "y":
                             _fd.write("m = %d\t\t\t# system memory in megabyte\n" % \
                                 memory)
                             break
                    
-                    elif memory > self.system.avail_memory():
+                    elif memory > self.avail_memory():
                         print ("Machine has not enough available memory %d." % \
-                            self.system.avail_memory())
+                            self.avail_memory())
                         accept = raw_input("Should this value used? [Y/n]:").lower()
                         if len(accept) == 0 or accept == "y":
                             _fd.write("m = %d\t# system memory in megabyte\n" % \
@@ -62,9 +57,9 @@ class CreateDialogConsole(object):
             is_cdrom = False
             cdrom = raw_input("Would you like use a cdrom [Y/n]: ").lower()
             if len(cdrom) == 0 or cdrom == "y":
-                if self.system.get_cdrom():
+                if self.get_cdrom():
                     cdrom_path = raw_input("Path to cdrom device [%s] press just enter or path to image: " \
-                        % self.system.get_cdrom())
+                        % self.get_cdrom())
                 else:
                     print ("Could not found cdrom device.")
                     while True:
@@ -78,10 +73,10 @@ class CreateDialogConsole(object):
                         break
                     if len(cdrom_path) == 0:
                         is_cdrom = True
-                        cdrom_device = self.system.get_cdrom()
-                        if self.system.get_cdrom():
+                        cdrom_device = self.get_cdrom()
+                        if self.get_cdrom():
                             _fd.write("cdrom = %s\t# path to cdrom or iso image\n" % \
-                                self.system.get_cdrom())
+                                self.get_cdrom())
                             break
                         else:
                             break

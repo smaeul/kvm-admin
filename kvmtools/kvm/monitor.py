@@ -36,16 +36,11 @@ class Monitor(object):
             "uuid": "info uuid",
             "network": "info network",
         }
-        self._monitor_open()
-
-    def __del__(self):
-        """Close to socket when exit the program."""
-        self._monitor_close()
 
     #########################################
     # monitor via unix socket or tcp socket #
     #########################################
-    def _monitor_open(self):        
+    def monitor_open(self):        
         """Open a socket to connect to the qemu-kvm monitor."""
         if self.monitor_options['Type'] == 'unix': 
             self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -63,7 +58,7 @@ class Monitor(object):
             except socket.error:
                 return False
 
-    def _monitor_close(self):
+    def monitor_close(self):
         """Close the opened socket connection."""    
         if self.socket is not None:
             self.socket.close()

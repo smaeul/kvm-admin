@@ -8,18 +8,22 @@
 
 import os
 
-from kvmtools.header import Header
-from kvmtools.config.create_dialog import CreateDialogConsole
 from kvmtools.config.set_config import SetConfig
+from kvmtools.config.create_dialog import CreateDialogConsole
+from kvmtools.kvm.build_command import BuildCommand
+from kvmtools.kvm.monitor import Monitor
+from kvmtools.kvm.system import System
 
 
-class Domain(Header, CreateDialogConsole, SetConfig):
+class Domain(SetConfig, CreateDialogConsole, BuildCommand, Monitor, System):
     """Class domain handle the domain(guest) configuration."""
 
     def __init__(self):
-        Header.__init__(self)
         SetConfig.__init__(self)
         CreateDialogConsole.__init__(self)
+        BuildCommand.__init__(self)
+        Monitor.__init__(self)
+        System.__init__(self)
 
     def create(self):
         """Create a minimalistic guest config file."""
@@ -38,9 +42,3 @@ class Domain(Header, CreateDialogConsole, SetConfig):
         else:
             self.create()
 
-    def read(self):
-        with open(self.kvm_domain_file) as _fd:
-            lines = _fd.readlines()
-            for line in lines:
-                print lines
- 

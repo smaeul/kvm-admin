@@ -12,31 +12,17 @@ from subprocess import Popen, PIPE
 from time import sleep
 
 from kvmtools.config.domain import Domain
-from kvmtools.kvm.monitor import Monitor
-from kvmtools.kvm.build_config import BuildConfig
-from kvmtools.kvm.build_command import BuildCommand
-from kvmtools.kvm.system import System
 
-class Action(Domain, BuildConfig, BuildCommand, Monitor, System):
+
+class Action(Domain):
     
     def __init__(self):
         Domain.__init__(self)
-        BuildConfig.__init__(self)
-        BuildCommand.__init__(self)
-        System.__init__(self)
-        self.command = ()
-        self.socket = None
+        self.kvm_errors = []
 
-    def load_command(self):
-        """Load config"""
-        try:
-            self.build_config()
-        except Exception, error_msg:
-            print error_msg
-            #self.kvm_modify_action()
-        self.command = self.build_command()
-        Monitor.__init__(self)
-        self.get_pid()
+    def kvm_error(self, error_message):
+        """Append a error message to error list."""
+        self.kvm_errors.append(error_message)
 
     def available_actions(self):
         """Return all methods which start with kvm_ and end with _action."""
@@ -135,8 +121,8 @@ class Action(Domain, BuildConfig, BuildCommand, Monitor, System):
                     sys.stdout.write("waiting ... %s\r" % sign)
                     sys.stdout.flush()
                     sleep(0.05)
-            else:
-                print ("Could not send signal shutdown.")
+        else:
+            print ("Could not send signal shutdown.")
 
     def kvm_kill_action(self):
         """Kill the guest.

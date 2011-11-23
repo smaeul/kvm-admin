@@ -6,20 +6,15 @@ from subprocess import call
 
 def del_iface_from_bridge():
     iface = sys.argv[1]
-    bridge = os.environ["bridge_%s" % iface]
-    cmd = ["brctl", "delif", bridge, iface] 
-    call(cmd)
+    bridge = "kvm_bridge_%s" % iface
+    if bridge in os.environ:
+        bridge = os.environ[bridge]
+        cmd = ["brctl", "delif", bridge, iface] 
+        call(cmd)
     # bring down interface
     iface_down = ["ip", "link", "set", iface , "down"]
     call(iface_down)
     # remove tun-tap device
     del_iface_from_tun = ["tunctl", "-d", iface]
-    
-    socket = "/var/run/kvm/%s.socket" % iface
-    pid = "/var/run/kvm/%s.pid" % iface
-    if os.path.exists(socket):
-        os.remove(socket)
-    if os.path.isfile(pid):
-        os.remove(pid)
 
 del_iface_from_bridge()

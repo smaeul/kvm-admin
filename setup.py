@@ -9,7 +9,30 @@
 
 from distutils.core import setup
 from os.path import join, isdir
-from os import listdir
+from os import listdir, mkdir
+from shutil import copytree, copy, rmtree
+
+from kvmtools.header import Header
+
+def copy_configs():
+    header = Header()
+    base_dir = header.kvm_base_config_dir
+    scripts = join(base_dir, header._kvm_script_dir)
+    configs = join(base_dir, header._kvm_conf_dir)
+    domains = join(base_dir, header._kvm_domain_dir)
+    example = join(domains, "example")
+    auto = join(base_dir, "auto")
+    if isdir(scripts):
+        rmtree(scripts)
+    copytree("scripts", scripts)
+    if isdir(configs):
+        rmtree(configs)
+    copytree("config", configs)
+    if not isdir(domains):
+        mkdir(domains)
+    copy("domains/example", example)
+    if not isdir(auto):
+        mkdir(auto)
 
 
 files = [join("bin", i) for i in listdir("bin")]
@@ -27,4 +50,4 @@ setup(
     packages = dirs,
     scripts = files
 )    
-
+copy_configs()
