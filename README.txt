@@ -28,10 +28,8 @@ usage: kvm-admin [-h] [--generate-options]
 =========
 Depencies
 =========
-Python argparse is backported by debian to python version 2.6.
-
 List: python >=2.4 and < 3.0 
-      python-argparse 
+      python-argparse (debian package name)
 
 All others are standard python library.
 
@@ -44,7 +42,7 @@ When qemu-kvm change or add parameter, than the this run this command:
 # Fix: and a config with current qemu-kvm verion and compare it each run
 
 This build a new list of all availables qemu-kvm options.
-This is needed to check if the given key in the configuration file 
+This is used to check if the given key in the configuration file 
 is a valid qemu-kvm option.
 
 ====
@@ -108,8 +106,10 @@ The syntax values are 1:1 on commandline usage the only differ is instead using
 	-option_name value
 	option_name = value
 
-Its exists only one tap option, which has a extend attribute.
-This is used when the tap device should add to a bridge automatic.
+Its exists only one tap option, which has an extend attribute.
+This is only used in combination with tap device.
+Its automatically add the tap device to given bridge.
+
 The syntax to append to net = tap option is:
     Example:
 	net = tap,bridge=bridge_name 
@@ -118,8 +118,7 @@ For fist run, you can use:
 	kvm-admin my_new_domain create
 
 This build a very minimalistic domain config through a console based dialog.
-# Feature: build a python ncurses script
-
+# Feature: build a python dialog script
 
 Example domain configuration file:
     name = my_first_domain
@@ -186,5 +185,5 @@ usage: kvm-admin domain_name monitor help
 Reboot or shutdown or status can send via the monitor too.
     kvm-admin domain_name monitor system_powerdown
 
-You can use the command line monitor like orginal "ALT + CTRL + 2" monitor.
+You can use the command line monitor like the orgin "ALT + CTRL + 2" monitor.
 You can add an usb device or ecject cdrom etc.
