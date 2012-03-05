@@ -5,53 +5,72 @@
 # 
 
 """
-(c) 2010 Jens Kasten <jens@kasten-edv.de>
+(c) 2010-12 Jens Kasten <jens@kasten-edv.de>
+last modified: 04.03.2012
 """
 
 import os
+import sys
 import re
 from subprocess import Popen, PIPE
 
 # need to import kvmtools to get absolute path
 import kvmtools
 from kvmtools.functions import which
+from kvmtools.header import Header 
+from kvmtools.config.parser import Parser
 
 
-class Generator(object):
+class Generator(Header, Parser):
     """Generate qemu-kvm options and write them in file
     qemu_kvm_options.py."""
 
     def __init__(self):
-        # binary name for qemu-kvm
-        self.qemu_kvm = "kvm"
+        Header.__init__(self)
+        self.kvm_errors = []
+        # keep the qemu-kvm absolute path
+        self.qemu_kvm = False
         # default setting for most parameters
         self.disabled = "disabled"
         # default setting for options_enabled_by_default
         self.enabled = "enabled"
-        # file where to write the dictonary
+        # set the module path
         module_path = os.path.abspath(os.path.dirname(kvmtools.__file__))
         self.file_to_write = os.path.join(module_path, "qemu_kvm_options.py")
         # option to exclude
         self.exclude_options = ['h', 'version']
         # print output of all values of the generated dictionary
         self.verbose = False
-        self.arguments()
+        self.get_kvm_path()
 
-    def arguments(self):
+    def kvm_error(self, message):
+        """append the message to error list"""
+        self.kvm_errors.append(message)
+
+    def get_kvm_path(self):
         """Check input and set the binary path."""
-        bin_path = which(self.qemu_kvm)
-        if bin_path:
-            self.qemu_kvm = bin_path
-            return 
-        print "Type the qemu-kvm binary name and press enter or q to quit."
+        kvm_path = os.path.join(self.kvm_base_config_dir, self._kvm_conf_dir, self._kvm_conf_name)
+        kvm_config = self.parse_config(kvm_path)
+        if "qemu-kvm" in kvm_config:
+            kvm_name = kvm_config["qemu-kvm"]
+            if os.path.isfile(kvm_name):
+                self.qemu_kvm = kvm_name
+                return True
+            else:
+                self.qemu_kvm = which(kvm_name)
+                if self.qemu_kvm:
+                    return True
+        print "Enter the qemu-kvm binary name or absolute path and press enter or q to quit."
         while True:
             result = raw_input("Name: ")
             if result == "q":
-                break
+                sys.exit(0)
             bin_path = which(result)
             if bin_path:
                 self.qemu_kvm = bin_path
-                break
+                return True
+            else:
+                print "Could not found '%s' in your PATH" % result 
 
     def generate(self):
         """Extract all arguments."""
@@ -67,6 +86,7 @@ class Generator(object):
                 print "Path to auto generated file: %s" % self.file_to_write
 
             cmd = [self.qemu_kvm, '--help']
+            print cmd
             process = Popen(cmd, stdout=PIPE, stderr=PIPE)
             process.wait()
             result = process.communicate()
@@ -130,3 +150,13 @@ class Generator(object):
             print str(error_msg)
         except IOError, error_msg:
             print str(error_msg)
+
+
+def main():
+    opts = Generator()
+    opts.verbose = True
+    opts.generate()
+
+
+if __name__ == "__main__":
+    main()
