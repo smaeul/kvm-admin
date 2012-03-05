@@ -14,7 +14,7 @@ from subprocess import Popen, PIPE
 def which(file_name):
     """Python implementation of which."""
     if os.path.isfile(file_name) and os.access(file_name, os.X_OK):
-        return True
+        return file_name 
     paths = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/sbin",
         "/usr/local/bin"]
     for path in paths:
