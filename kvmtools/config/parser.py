@@ -19,12 +19,10 @@ import re
 try:
     from kvmtools.qemu_kvm_options import qemu_kvm_options
 except ImportError:
-    os.system("generate-kvm-options --generate")
-    try:
-        from kvmtools.qemu_kvm_options import qemu_kvm_options
-    except ImportError, error_msg:
-        print error_msg
-        sys.exit(1)
+    # if the file qemu_kvm_options.py does not exists as first run
+    # just create an empty dictionary
+    qemu_kvm_options = {}
+
 
 class Parser(object):
     """Simple config parser for kvm guest config file."""
