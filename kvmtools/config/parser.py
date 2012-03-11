@@ -103,7 +103,7 @@ class Parser(object):
         if not config_one and not config_two:
             return {}
         if config_one and not config_two:
-            return config_none
+            return config_one
         if not config_one and config_two:
             return config_two
         for key, value in config_one.iteritems():
