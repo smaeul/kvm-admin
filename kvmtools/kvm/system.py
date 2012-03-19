@@ -18,11 +18,21 @@ class System(object):
 
     def avail_memory(self):
         """Return available system memory in megabyte."""
-        return 0
+        # TODO: proper way
+        process1 = Popen(["free", "-m"], stdout=PIPE)
+        process2 = Popen(["awk", "{print $4}"], stdin=process1.stdout, stdout=PIPE)
+        result = process2.communicate()[0]
+        mem = result.split("\n")
+        return int(mem[1])
 
     def total_memory(self):
         """Return total amount of system memory in megabyte."""
-        return 0
+        # TODO: proper way
+        process1 = Popen(["free", "-m"], stdout=PIPE)
+        process2 = Popen(["awk", "{print $2}"], stdin=process1.stdout, stdout=PIPE)
+        result = process2.communicate()[0]
+        mem = result.split("\n")
+        return (mem[1])
 
     def get_cdrom(self):
         """Check if machine has a cdrom. Return the path to cdrom device."""
