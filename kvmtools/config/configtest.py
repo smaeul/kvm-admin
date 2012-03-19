@@ -5,13 +5,15 @@
 #
 
 """
-(c) 2007-2011 Jens Kasten <jens@kasten-edv.de>
+(c) 2007-2012 Jens Kasten <jens@kasten-edv.de>
 """
 
 import os
-import argparse
-
-from kvmtools.configparser import Parser
+try:
+    import argparse
+except ImportError:
+    import kvmtools.config.argsparse as argsparse
+from kvmtools.config.parser import Parser
 
 
 class TestConfig(object):
@@ -22,10 +24,9 @@ class TestConfig(object):
         if not os.path.isfile(config_file):
             print "Configfile does not exists: ", config_file
             return
-        parser = Parser()
-        result = parser(config_file)
+        result = Parser().parse_config(config_file)
         for key, value in result.iteritems():
-            print "%s=%s" % (key, value)
+            print "% s= %s" % (key, value)
 
 
 def main():
