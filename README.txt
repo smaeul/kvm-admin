@@ -5,7 +5,7 @@ A commandline script to use a simple guest configuration file.
 
 usage: kvm-admin [-h]
                  domain_name
-                 {boot,create,kill,migrate,modify,monitor,reboot,show,shutdown,status}
+                 {boot,create,kill,modify,monitor,reboot,show,shutdown,status}
                  [option [option ...]]
 
 optional arguments:
@@ -16,7 +16,7 @@ QEMU-KVM domain:
                         configuration file name
 
 Action for a domain:
-  {boot,create,kill,migrate,modify,monitor,reboot,show,shutdown,status}
+  {boot,create,kill,modify,monitor,reboot,show,shutdown,status}
                         Choose an action for the KVM guest
 
 Monitor command:
@@ -30,6 +30,8 @@ Depencies
 =========
 List: python >=2.4 and < 3.0 
       python-argparse (debian package name)
+        optional using argparse from kvmtools.config.argparse 
+
 
 All others are standard python library.
 
@@ -75,17 +77,18 @@ Its recommend to use an unprivileged user.
 It can set in the global configuration file /etc/kvm/config/kvm.cfg
 Uncomment:
 	# optional, add an user kvm to run the qemu-kvm process
-	#runas = kvm
+	runas = kvm
 
 Each guest configuration file can have this option too.
 
-Example to use a system user kvm on debian. If qemu-kvm is already installed, then add only the group kvm
+Example to use a system user kvm on debian. 
+If qemu-kvm already is installed,then add only the group kvm
 and modify the /etc/passwd.
 
 	addgroup --gid 116 kvm_test
 	adduser --system --gid 116 --uid 116 --home /var/run/kvm_test --disabled-password --shell /bin/false kvm
-	chown kvm:kvm /var/run/kvm or /usr/local/var/run/kvm
-    	cmod 750 /var/run/kvm or /usr/local/var/run/kvm
+	chown kvm:kvm /var/run/kvm  (or /usr/local/var/run/kvm)
+    chmod 750 /var/run/kvm  (or /usr/local/var/run/kvm)
 
 =============
 Kernel module
@@ -118,7 +121,7 @@ For fist run, you can use:
 	kvm-admin my_new_domain create
 
 This build a very minimalistic domain config through a console based dialog.
-# Feature: build a python dialog script
+# Todo: build a python dialog script
 
 Example domain configuration file:
     name = my_first_domain
@@ -142,7 +145,7 @@ Example domain configuration file:
     net = tap,bridge=br1
     net = nic,mac=00:50:11:22:33:01
     # to run kvm guest as unprivileged user
-    runsas = kvm
+    runas = kvm
     # override the pidfile, the directory have to writeable
     pidfile = absolute_path_to_pidfile
     # override the monitor to use tcp connection
