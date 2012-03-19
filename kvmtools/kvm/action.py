@@ -48,8 +48,8 @@ class Action(Domain):
         else:
             self.create()
 
-    def kvm_migrate_action(self, command_monitor):
-        self.kvm_monitor_action(command_monitor)
+    #def kvm_migrate_action(self, command_monitor):
+    #    self.kvm_monitor_action(command_monitor)
 
     def kvm_monitor_action(self, command_monitor):
         """Monitor to the qemu-kvm guest on commandline."""
@@ -98,6 +98,8 @@ class Action(Domain):
             return
         flag = 0
         if self.monitor_send(self.qemu_monitor["shutdown"]):
+            # set a time  out to wait, that the shutdown dialog appears
+            sleep(1.5)
             self.monitor_send(self.qemu_monitor["enter"])
             print ("Shutdown ...")
             while True:
