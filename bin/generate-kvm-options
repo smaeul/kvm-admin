@@ -9,7 +9,10 @@
 (c) 2010-2011 Jens Kasten <jens@kasten-edv.de>
 """
 
-import argparse
+try:
+    import argparse
+except ImportError:
+    import kvmtools.config.argparse as argparse
 
 from kvmtools.generate_options import Generator
     
