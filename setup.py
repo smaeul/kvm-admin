@@ -9,8 +9,8 @@
 
 
 from distutils.core import setup
-from os.path import join, isdir
-from os import listdir, mkdir
+from os.path import join, isdir, isfile
+from os import listdir, mkdir, chmod
 from shutil import copytree, copy, rmtree
 from subprocess import call
 
@@ -27,6 +27,10 @@ def copy_configs():
     if isdir(scripts):
         rmtree(scripts)
     copytree("scripts", scripts)
+    # make the network script executable
+    for i in listdir(scripts):
+        if isfile(join(scripts, i)):
+            chmod(join(scripts, i), 0755)
     if isdir(configs):
         rmtree(configs)
     copytree("config", configs)
