@@ -1,9 +1,10 @@
 # 
-# Module which handle the domain config
+# Module which handle the domain configuration.
+# Its uses to collect information from different modules.
 #
 
 """
-(c) 2011 Jens Kasten <jens@kasten-edv.de>
+(c) 2011-2012 Jens Kasten <jens@kasten-edv.de>
 """
 
 import os
@@ -26,19 +27,33 @@ class Domain(SetConfig, CreateDialogConsole, BuildCommand, Monitor, System):
         System.__init__(self)
 
     def create(self):
-        """Create a minimalistic guest config file."""
-        print ("Creating the domain config file: %s" % self.kvm_domain_file)
-        self.create_dialog("w")
+        """Create a minimalistic domain config file."""
+        print "Creating the domain config file: %s" % self.kvm_domain_file
+        self.create_dialog()
         self.modify()
 
     def modify(self):
-        """Edit a guest config file."""
+        """Edit a domain config file."""
+        # TODO: check on different distribution and find a better way
         if os.path.isfile(self.kvm_domain_file):
             if os.access(self.kvm_domain_file, os.W_OK):
-                os.execl("/usr/bin/editor", "", self.kvm_domain_file)
+                try:
+                    # for debian 
+                    os.execl("/usr/bin/editor", "", self.kvm_domain_file)
+                except OSError, e:
+                    editor = os.environ["EDITOR"]
+                    try:
+                        # for gentoo
+                        os.execl(editor, "", self.kvm_domain_file)
+                    except OSError, e:
+                        try:
+                            # for unknown 
+                            os.execl("/usr/bin/vi", "", self.kvm_domain_file)
+                        except:
+                            print "Operation failed: Editor is not set correct."
             else:
-                print ("Permission denied to write to %s" % \
-                    self.kvm_domain_file)
+                print "Permission denied: No write access for %s." % \
+                    self.kvm_domain_file
         else:
             self.create()
 
