@@ -49,8 +49,14 @@ class System(object):
     def get_pid(self):
         """Set pif if pidfile is available"""
         if os.path.isfile(self.kvm_pidfile):
-            with open(self.kvm_pidfile) as fd:
+            try:
+                fd = open(self.kvm_pidfile)
                 self.kvm_pid = int(fd.readline().strip())
+            except IOError, e:
+                print "Operation failed: %s" % e
+            finally:
+                if fd:
+                    fd.close()
 
     def _get_vnc(self):
         """Return vnc info."""
@@ -72,8 +78,14 @@ class System(object):
 
     def _get_process_info(self):
         """Collect information from proc."""
-        with open(os.path.join("/proc", "%d/status" % self.kvm_pid)) as fd:
+        try:
+            fd = open(os.path.join("/proc", "%d/status" % self.kvm_pid))
             lines = [line.strip().split(':') for line in fd.readlines()]
+        except IOError, e:
+            print "Operation failed: %s" % e
+        finally:    
+            if fd:
+                fd.close()
         for i in lines:
             name = "kvm_process_" + i[0].strip().lower()
             value = i[1].strip("\t").strip()
