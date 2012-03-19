@@ -7,12 +7,14 @@
 """
 
 import os
-
+import kvmtools
 
 class Header(object):
     """Contain all attribute to store filename or paths."""
     
     def __init__(self):
+        # keep the list of errors
+        self.kvm_errors = []
         # base direcotry configs, and scripts 
         self.kvm_base_config_dir = "/etc/kvm"
         # subdirecotories from self.base_dir
@@ -27,9 +29,15 @@ class Header(object):
         # default telnet port 23, can only use once at time in one guest
         # otherwise each guest have to set expliciet a different port
         self.telnet_port = 23
+        # keep the qemu-kvm absolute path
+        self.qemu_kvm = False
         # default directory for pidfile,and socketfile
         self.kvm_run_path = '/var/run/kvm'
         # this exclude_options are using internal only
         self.exclude_options = ['qemu-kvm', 'python-debug']
-
+        # set the module path
+        self.module_path = os.path.abspath(os.path.dirname(kvmtools.__file__))
+        # build file name for qemu kvm options
+        self.file_to_write = os.path.join(self.module_path, 
+                                          "qemu_kvm_options.py")
 
