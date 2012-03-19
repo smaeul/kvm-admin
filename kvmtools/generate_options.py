@@ -71,6 +71,7 @@ class Generator(Header, Parser):
 
     def generate(self):
         """Extract all arguments."""
+        fd = None
         try:
             # dictionary which contain all options
             output = {}
@@ -82,12 +83,9 @@ class Generator(Header, Parser):
             if self.verbose:
                 print "Path to auto generated file: %s" % self.file_to_write
             cmd = [self.qemu_kvm, '--help']
-            process = Popen(cmd, stdout=PIPE, stderr=PIPE)
+            process = Popen(cmd, stdout=PIPE)
             process.wait()
             result = process.communicate()
-            if len(result[1]) > 0:
-                print result[1]
-                return
             if len(result[0]) == 0:
                 raise Exception("No output: %s --help" % self.file_to_write)
             status = result[0].split("\n")
@@ -124,26 +122,27 @@ class Generator(Header, Parser):
                             line_counter += 1 
                                
             # write output to file
-            _fd = open(self.file_to_write, 'a')
-            _fd.write(header)
+            fd = open(self.file_to_write, 'a')
+            fd.write(header)
             for index, value in output.iteritems():
                 if index == 0:
                     if self.verbose:
                         print value
-                    _fd.write(value + "\n")
+                    fd.write(value + "\n")
                 else:
                     # check for double key
                     if value != output[index-1]:
                         if self.verbose:
                             print value
-                        _fd.write(value + "\n")
-            _fd.write(footer)                        
-            _fd.close()
+                        fd.write(value + "\n")
+            fd.write(footer)                        
         except OSError, error_msg:
             print str(error_msg)
         except IOError, error_msg:
             print str(error_msg)
-
+        finally:
+            if fd:
+                fd.close()
 
 def main():
     opts = Generator()
