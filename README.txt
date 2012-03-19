@@ -1,6 +1,8 @@
 =========
 kvm-tools
 =========
+Depend on Python version >= 2.4 and < 3.0
+
 A commandline script to use a simple guest configuration file.
 
 usage: kvm-admin [-h]
