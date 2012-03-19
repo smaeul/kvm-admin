@@ -34,7 +34,9 @@ class Parser(object):
         else:
             counter = 1
             config = []
-            with open(config_name) as fd:
+            fd = None
+            try:
+                fd = open(config_name)
                 lines = fd.readlines()
                 # remove withespace but not and arguments 
                 for line in lines:
@@ -62,6 +64,9 @@ class Parser(object):
                         content = "=".join([key, value])
                         config.append(content)
                     counter += 1
+            finally:
+                if fd:
+                    fd.close()
             return config
 
     def parse_config(self, config_name):
