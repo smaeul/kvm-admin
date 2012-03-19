@@ -7,10 +7,12 @@
 (c) 2011 Jens Kasten <jens@kasten-edv.de>
 """
 
+
 from distutils.core import setup
 from os.path import join, isdir
 from os import listdir, mkdir
 from shutil import copytree, copy, rmtree
+from subprocess import call
 
 from kvmtools.header import Header
 
@@ -51,3 +53,5 @@ setup(
     scripts = files
 )    
 copy_configs()
+# generate qemu-kvm options
+call(["generate-kvm-options", "-g"])
