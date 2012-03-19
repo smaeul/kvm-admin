@@ -28,11 +28,17 @@
 
 import os
 import sys
-import argparse
+# for backward compality use the shipped argparse 
+# if python version does not support it
+try:
+    import argparse
+except ImportError:
+    import kvmtools.config.argparse as argparse
 import gettext
 
 from kvmtools.kvm.action import Action
 
+# TODO: have to create translation stuff
 LOCALEAPP = sys.argv[0]
 TRANSLATE = gettext.translation(LOCALEAPP, "/usr/share/locale", fallback=True)
 _ = TRANSLATE.ugettext
