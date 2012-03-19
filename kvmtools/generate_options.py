@@ -31,9 +31,6 @@ class Generator(Header, Parser):
         self.disabled = "disabled"
         # default setting for options_enabled_by_default
         self.enabled = "enabled"
-        # set the module path
-        module_path = os.path.abspath(os.path.dirname(kvmtools.__file__))
-        self.file_to_write = os.path.join(module_path, "qemu_kvm_options.py")
         # option to exclude
         self.exclude_options = ['h', 'version']
         # print output of all values of the generated dictionary
