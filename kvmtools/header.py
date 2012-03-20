@@ -40,4 +40,9 @@ class Header(object):
         # build file name for qemu kvm options
         self.file_to_write = os.path.join(self.module_path, 
                                           "qemu_kvm_options.py")
+        # search path's
+        self.search_paths = [
+            "/bin", "/sbin", 
+            "/usr/bin", "/usr/sbin", 
+            "/usr/local/sbin", "/usr/local/bin"]
 
