@@ -59,6 +59,8 @@ class Generator(Header, Parser):
             result = raw_input("Name: ")
             if result == "q":
                 sys.exit(0)
+            elif len(result) == 0:
+                continue
             bin_path = which(result)
             if bin_path:
                 self.qemu_kvm = bin_path
