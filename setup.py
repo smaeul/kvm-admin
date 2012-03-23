@@ -4,10 +4,11 @@
 #
 
 """
-(c) 2011 Jens Kasten <jens@kasten-edv.de>
+(c) 2011-2012 Jens Kasten <jens@kasten-edv.de>
 """
 
-
+import os
+import sys
 from distutils.core import setup
 from os.path import join, isdir, isfile
 from os import listdir, mkdir, chmod
@@ -40,6 +41,10 @@ def copy_configs():
     if not isdir(auto):
         mkdir(auto)
 
+if os.getuid() != 0:
+    print "Script need root user rights to install."
+    print "Change user to root user or use sudo."
+    sys.exit(1)
 
 files = [join("bin", i) for i in listdir("bin")]
 dirs = [join("kvmtools", i) for i in listdir("kvmtools") if isdir(join("kvmtools",i))]
@@ -47,7 +52,7 @@ dirs.append("kvmtools")
 
 setup(
     name = "kvmtools",
-    version = "0.1.7.3",
+    version = "0.1.7.5",
     keywords = ["kvm-admin", "kvmtools"],
     author = "Jens Kasten",
     author_email = "jens@kasten-edv.de",
@@ -58,4 +63,7 @@ setup(
 )    
 copy_configs()
 # generate qemu-kvm options
-call(["generate-kvm-options", "-g"])
+try:
+    call(["generate-kvm-options", "-g"])
+except KeyboardInterrupt:
+    sys.exit(0)
