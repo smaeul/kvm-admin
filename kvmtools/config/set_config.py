@@ -19,16 +19,16 @@ import os
 
 from kvmtools.header import Header
 
+
 class SetConfig(Header):
 
     def __init__(self):
         Header.__init__(self)
         # initialize attribute
-        self.kvm_domain_dir = None
+        # keep all file name which are found in dir domains
         self.kvm_domain_name_all = []
-        self.kvm_domain_name = None
+        # keep the on the fly create values
         self.kvm_domain_file = None
-        self.kvm_script_dir = None
         self.kvm_pidfile = None
         self.kvm_socketfile = None
         self.kvm_conf_file = None
