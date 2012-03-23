@@ -19,3 +19,8 @@ def which(file_name):
         if os.path.isfile(service) and os.access(service, os.X_OK):
             return service
     return False
+
+qemu_kvm_error_message = []
+def qemu_kvm_error(self, message):
+    """Just a collection of errors in a list."""
+    qemu_kvm_error_message.append(message)   
