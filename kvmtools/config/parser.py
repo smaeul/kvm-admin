@@ -22,6 +22,7 @@ except ImportError:
     # if the file qemu_kvm_options.py does not exists as first run
     # just create an empty dictionary
     qemu_kvm_options = {}
+from kvmtools.functions import qemu_kvm_error_message
 
 
 class Parser(object):
@@ -47,18 +48,18 @@ class Parser(object):
                         if len(temp) == 1:
                             msg = "Missing sign '=' in %s on line %s" % \
                                 (config_name, counter)
-                            self.kvm_error(msg)
+                            qemu_kvm_error(msg)
                         # remove all withespace from string
                         key = re.sub(r'\s', '', temp[0])
                         if key not in self.exclude_options and key not in qemu_kvm_options:
                             msg = "Not a qemu-kvm command: '%s' in %s on line %s" % \
                                 (key, config_name, counter)
-                            self.kvm_error(msg)
+                            qemu_kvm_error(msg)
                         # remove comments
                         if len(temp) == 1:
                             msg = "Missing value in %s on line %s" % \
                                 (config_name, counter)
-                            self.kvm_error(msg)
+                            qemu_kvm_error(msg)
                         else:
                             value = temp[1].split("#")[0].strip()
                         content = "=".join([key, value])
