@@ -17,31 +17,33 @@ class BuildCommand(BuildConfig):
         self.commmand = ()
 
     def build_command(self):
-        """Return a tuple. First entry is a list to execute via subprocess
-        and the second is a string to display it.
+        """Create a tuple command. 
+        First entry is a list that is executed via subprocess
+        and the second is a string to display the command.
         """
         self.build_config()
         if self.config is None:
-            return None
+            return None 
         cmd_execute = []
         cmd_string = ""
-        # Start to build a list, firstly add the qemu-kvm binary
-        if "qemu-kvm" not in self.config:
-            raise Exception("Need qemu-kvm = /path/to/kvm option in config.")
+        # Start to build a list
+        # first add the qemu-kvm binary path
         cmd_execute.append(self.config["qemu-kvm"])
+        # delete the helper parameter from config
         for key in self.exclude_options:
             if key in self.config:
                 del self.config[key]
-        # iterate over the user config and build a list
+        # iterate over the config and build a list
         for key, value in self.config.iteritems():
-            # this check search for more option like -drive -drive etc.
-            if "disabled" == value:
+            # ignore disabled values
+            if self.is_disabled == value:
                 continue
+            # this check search for more option like -drive -drive etc.
             elif isinstance(value, dict):
                 for i in value.itervalues():
                     cmd_execute.append(''.join(['-', key]))
                     cmd_execute.append(i)
-            elif "enabled" != value:
+            elif self.is_enabled != value:
                 # this qemu-kvm option have an option, so add -key value
                 cmd_execute.append(''.join(['-', key]))
                 cmd_execute.append(value)
