@@ -1,20 +1,17 @@
 #
-# header file 
+# header file
+# try to collect all attribute which can be changed
 #
 
 """
 (c) 2011 Jens Kasten <jens@kasten-edv.de>
 """
 
-import os
-import kvmtools
-
 class Header(object):
-    """Contain all attribute to store filename or paths."""
+    """Contain all attribute to store filename or paths and some other stuff.
+    """
     
     def __init__(self):
-        # keep the list of errors
-        self.kvm_errors = []
         # base direcotry configs, and scripts 
         self.kvm_base_config_dir = "/etc/kvm"
         # subdirecotories from self.base_dir
@@ -29,20 +26,20 @@ class Header(object):
         # default telnet port 23, can only use once at time in one guest
         # otherwise each guest have to set expliciet a different port
         self.telnet_port = 23
-        # keep the qemu-kvm absolute path
-        self.qemu_kvm = False
         # default directory for pidfile,and socketfile
         self.kvm_run_path = '/var/run/kvm'
         # this exclude_options are using internal only
-        self.exclude_options = ['qemu-kvm', 'python-debug']
-        # set the module path
-        self.module_path = os.path.abspath(os.path.dirname(kvmtools.__file__))
-        # build file name for qemu kvm options
-        self.file_to_write = os.path.join(self.module_path, 
-                                          "qemu_kvm_options.py")
+        self.exclude_options = ['qemu-kvm', 'python-debug', "h", "version"]
+        # file name for qemu kvm options
+        self.qemu_kvm_options_file_name = "qemu_kvm_options.py"
         # search path's
-        self.search_paths = [
-            "/bin", "/sbin", 
-            "/usr/bin", "/usr/sbin", 
-            "/usr/local/sbin", "/usr/local/bin"]
+        self.search_paths = ["/bin", "/sbin", 
+                             "/usr/bin", "/usr/sbin", 
+                             "/usr/local/sbin", "/usr/local/bin"]
+        # setting for qemu-kvm 
+        self.is_disabled = "disabled"
+        # setting for qemu-kvm options
+        self.is_enabled = "enabled"
+        self.qemu_kvm_error_message = []
+
 
