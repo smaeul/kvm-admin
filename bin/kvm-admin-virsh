@@ -1,0 +1,148 @@
+#!/usr/bin/python2.7
+#
+# Comamandline tool to manage a qemu-kvm domain.
+#
+# Usage: kvm-admin guest_name action [arguments]
+#
+# Depencies:
+#           python-argparse
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+
+"""
+(c) 2007-2012 Jens Kasten <jens@kasten-edv.de> 
+"""
+
+import os
+import sys
+# for backward compality use the shipped argparse 
+# if python version does not support it
+try:
+    import argparse
+except ImportError:
+    import kvmtools.argparse as argparse
+import gettext
+
+from kvmtools.kvm.action import Action
+
+# TODO: have to create translation stuff
+LOCALEAPP = sys.argv[0]
+TRANSLATE = gettext.translation(LOCALEAPP, "/usr/share/locale", fallback=True)
+_ = TRANSLATE.ugettext
+
+
+class KvmAdmin(Action):
+    """ Class for commandline usage for a qemu-kvm domain.
+    Its offers methods for to start and stop the domain.
+    A special method is the commandline monitor.
+    In default configuration its create a socketfile for each domain and
+    is it can use like the standard monitor.
+    """
+
+    def __init__(self):
+        # load the methods which are available for doamin
+        Action.__init__(self)
+        self.value = None
+        self.debug = False
+
+    def run(self):
+        """Do an action for a domain.
+        Call a method based on commandline option.
+        """
+        kvm_method = "".join(["kvm_", self.action, "_action"])
+        self.monitor_open()
+        if "monitor" in self.action or "migrate" in self.action:
+            if self.monitor:
+                # build string from third option till end
+                cmd_monitor = " ".join(str(i) for i in self.monitor)
+                getattr(self, kvm_method)(cmd_monitor)
+            else:
+                raise Exception("Missing monitor argument. Type 'help'.")
+        else:
+            getattr(self, kvm_method)()
+        self.monitor_close()
+
+    def show_error(self):
+        """Display errors if the registered."""
+        errors = self.kvm_errors
+        if len(errors) > 0:
+            for error in errors:
+                print error
+            return True
+
+    def _set(self, value):
+        self.value = value
+
+    def _get(self):
+        return self.value
+
+
+def main():
+    """Handle the commandline arguments."""
+    kvm_admin = KvmAdmin()
+    actions = kvm_admin.available_actions()
+    domains = kvm_admin.available_domains()
+
+    # manage the commandline arguments
+    parser = argparse.ArgumentParser(
+        epilog="Available domains: %s" % ", ".join(domains))
+    parser.add_argument("--debug", default=False, action="store_true",
+        help="Print full execption output.")
+
+    # if you want different order for arguments, just change group1 with group2
+    group2 = parser.add_argument_group("Action for a domain")
+    group2.add_argument("action", choices=actions, 
+        help=_("Choose an action for the KVM guest"))
+
+    group1 = parser.add_argument_group(_("QEMU-KVM domain"))
+    group1.add_argument("domain", default=False,
+        metavar=(_("domain_name")),
+        help=_("Choose a KVM domain name, "
+             "its the same like the configuration file name"))
+   
+    group3 = parser.add_argument_group("Monitor commands")
+    group3.add_argument("monitor", nargs="*", default=False,
+        metavar="option",
+        help=_("One ore more arguments can pass to the monitor."))
+    
+    args = parser.parse_args()
+
+    if args.action == "create" or args.domain in domains: 
+        kvm_admin.kvm_domain_name = args.domain
+    else:
+        parser.error(_("Available domains: %s") % domains)
+
+    kvm_admin.action = args.action
+    kvm_admin.monitor = args.monitor
+    kvm_admin.debug = args.debug
+
+    if not args.action == "modify" and kvm_admin.show_error() :
+        sys.exit(1)
+    if args.debug:
+        kvm_admin.run()
+    else:
+        try:
+            kvm_admin.run()
+        except Exception, error_msg:
+            print error_msg
+            
+        
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print _("\rUser break.")
+        sys.exit(0)
