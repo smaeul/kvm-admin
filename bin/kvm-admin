@@ -101,6 +101,8 @@ def main():
         epilog="Available domains: %s" % ", ".join(domains))
     parser.add_argument("--debug", default=False, action="store_true",
         help="Print full execption output.")
+
+    # if you want different order for arguments, just change group1 with group2
     group1 = parser.add_argument_group(_("QEMU-KVM domain"))
     group1.add_argument("domain", default=False,
         metavar=(_("domain_name")),
@@ -109,10 +111,12 @@ def main():
     group2 = parser.add_argument_group("Action for a domain")
     group2.add_argument("action", choices=actions, 
         help=_("Choose an action for the KVM guest"))
+    
     group3 = parser.add_argument_group("Monitor commands")
     group3.add_argument("monitor", nargs="*", default=False,
         metavar="option",
         help=_("One ore more arguments can pass to the monitor."))
+    
     args = parser.parse_args()
 
     if args.action == "create" or args.domain in domains: 
