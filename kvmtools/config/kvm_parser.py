@@ -52,11 +52,12 @@ class Parser(object):
                             raise RuntimeError(msg)
                         # remove all withespace from string
                         key = re.sub(r'\s', '', temp[0])
-                        if key not in Header().exclude_options \
-                            and key not in kvm_options:
-                            print "Not a qemu-kvm command: '%s' in %s on line %s" % \
-                                 (key, config_file, counter)
-                            sys.exit(1)
+                        if IS_QEMU_KVM_OPTION:
+                            if key not in Header().exclude_options \
+                                and key not in kvm_options:
+                                print "Not a qemu-kvm command: '%s' in %s on line %s" % \
+                                     (key, config_file, counter)
+                                sys.exit(1)
                         # remove comments
                         if len(temp) == 1:
                             msg = "Missing value in %s on line %s" % \
