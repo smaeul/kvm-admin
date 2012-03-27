@@ -3,7 +3,7 @@
 #
 
 """
-(c) 2011 Jens Kasten <jens@kasten-edv.de>
+(c) 2011-2012 Jens Kasten <jens@kasten-edv.de>
 """
 
 import os
@@ -11,11 +11,11 @@ import sys
 from subprocess import Popen, PIPE
 from time import sleep
 
-from kvmtools.config.domain import Domain
+from kvmtools.kvm.domain import Domain
 
 
 class Action(Domain):
-    
+
     def __init__(self):
         Domain.__init__(self)
         self.kvm_errors = []
@@ -32,7 +32,7 @@ class Action(Domain):
                 methode = action.replace("kvm_", "").replace("_action", "")
                 actions.append(methode)
         return actions
-   
+
     def kvm_show_action(self):
         """show the command as string"""
         print self.command[1]

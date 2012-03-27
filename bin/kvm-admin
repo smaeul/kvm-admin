@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Comamandline tool to manage a kvm guest with monitor.
+# Comamandline tool to manage a qemu-kvm domain.
 #
 # Usage: kvm-admin guest_name action [arguments]
 #
@@ -23,7 +23,7 @@
 #
 
 """
-(c) 2007-2011 Jens Kasten <jens@kasten-edv.de> 
+(c) 2007-2012 Jens Kasten <jens@kasten-edv.de> 
 """
 
 import os
@@ -33,7 +33,7 @@ import sys
 try:
     import argparse
 except ImportError:
-    import kvmtools.config.argparse as argparse
+    import kvmtools.argparse as argparse
 import gettext
 
 from kvmtools.kvm.action import Action
@@ -45,11 +45,17 @@ _ = TRANSLATE.ugettext
 
 
 class KvmAdmin(Action):
-    """ Class for commandline usage for a qemu-kvm guest."""
+    """ Class for commandline usage for a qemu-kvm domain.
+    Its offers methods for to start and stop the domain.
+    A special method is the commandline monitor.
+    In default configuration its create a socketfile for each domain and
+    is it can use like the standard monitor.
+    """
 
     def __init__(self):
+        # load the methods which are available for doamin
         Action.__init__(self)
-        self._args_value = None
+        self.value = None
         self.debug = False
 
     def run(self):
@@ -77,20 +83,20 @@ class KvmAdmin(Action):
                 print error
             return True
 
-    def _set(self, args_value):
-        self._args_value = args_value
+    def _set(self, value):
+        self.value = value
 
     def _get(self):
-        return self._args_value
+        return self.value
 
 
 def main():
     """Handle the commandline arguments."""
     kvm_admin = KvmAdmin()
     actions = kvm_admin.available_actions()
-    domains = kvm_admin.kvm_domain_name_all
-   
-    # manage the arguments
+    domains = kvm_admin.available_domains()
+
+    # manage the commandline arguments
     parser = argparse.ArgumentParser(
         epilog="Available domains: %s" % ", ".join(domains))
     parser.add_argument("--debug", default=False, action="store_true",
@@ -113,9 +119,11 @@ def main():
         kvm_admin.kvm_domain_name = args.domain
     else:
         parser.error(_("Available domains: %s") % domains)
+
     kvm_admin.action = args.action
     kvm_admin.monitor = args.monitor
     kvm_admin.debug = args.debug
+
     if not args.action == "modify" and kvm_admin.show_error() :
         sys.exit(1)
     if args.debug:

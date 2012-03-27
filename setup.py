@@ -7,47 +7,44 @@
 (c) 2011-2012 Jens Kasten <jens@kasten-edv.de>
 """
 
+from distutils.core import setup
 import os
 import sys
-from distutils.core import setup
-from os.path import join, isdir, isfile
-from os import listdir, mkdir, chmod
 from shutil import copytree, copy, rmtree
 from subprocess import call
 
 from kvmtools.header import Header
 
+
 def copy_configs():
-    header = Header()
-    base_dir = header.kvm_base_config_dir
-    scripts = join(base_dir, header._kvm_script_dir)
-    configs = join(base_dir, header._kvm_conf_dir)
-    domains = join(base_dir, header._kvm_domain_dir)
-    example = join(domains, "example")
-    auto = join(base_dir, "auto")
-    if isdir(scripts):
-        rmtree(scripts)
-    copytree("scripts", scripts)
+    path = Header()
+    example = os.path.join(path.kvm_domains_dir, "example")
+    if os.path.isdir(path.kvm_scripts_dir):
+        rmtree(path.kvm_scripts_dir)
+    copytree("scripts", path.kvm_scripts_dir)
     # make the network script executable
-    for i in listdir(scripts):
-        if isfile(join(scripts, i)):
-            chmod(join(scripts, i), 0755)
-    if isdir(configs):
-        rmtree(configs)
-    copytree("config", configs)
-    if not isdir(domains):
-        mkdir(domains)
+    for i in os.listdir(path.kvm_scripts_dir):
+        if os.path.isfile(os.path.join(path.kvm_scripts_dir, i)):
+            os.chmod(os.path.join(path.kvm_scripts_dir, i), 0755)
+    if os.path.isdir(path.kvm_config_dir):
+        rmtree(path.kvm_config_dir)
+    copytree("config", path.kvm_config_dir)
+    os.chmod(path.kvm_config_dir, 0755)
+    if not os.path.isdir(path.kvm_domains_dir):
+        os.mkdir(self.kvm_domains_dir)
+    os.chmod(path.kvm_domains_dir, 0755)
     copy("domains/example", example)
-    if not isdir(auto):
-        mkdir(auto)
+    if not os.path.isdir(path.kvm_auto_dir):
+        os.mkdir(path.kvm_auto_dir)
+    os.chmod(path.kvm_auto_dir, 0755)
 
 if os.getuid() != 0:
     print "Script need root user rights to install."
     print "Change user to root user or use sudo."
     sys.exit(1)
 
-files = [join("bin", i) for i in listdir("bin")]
-dirs = [join("kvmtools", i) for i in listdir("kvmtools") if isdir(join("kvmtools",i))]
+files = [os.path.join("bin", i) for i in os.listdir("bin")]
+dirs = [os.path.join("kvmtools", i) for i in os.listdir("kvmtools") if os.path.isdir(os.path.join("kvmtools",i))]
 dirs.append("kvmtools")
 
 setup(

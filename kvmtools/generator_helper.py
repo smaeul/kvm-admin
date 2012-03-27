@@ -1,3 +1,7 @@
+# 
+#  Helper Module to do some checks.
+#
+
 """
 (c) 2012 Jens Kasten <jens@kasten-edv.de>
 """
@@ -6,66 +10,50 @@ import os
 import sys
 from subprocess import Popen, PIPE
 
-# need to import kvmtools to get absolute path
-import kvmtools
 from kvmtools.functions import which
-from kvmtools.header import Header 
-from kvmtools.config.parser import Parser
+from kvmtools.header import Header
+from kvmtools.config.kvm_parser import Parser
 
 
-class CheckKvm(Parser, Header):
+class GeneratorHelper(Header):
 
     def __init__(self):
-        self.qemu_kvm_help = []
-        self.qemu_kvm_options = []
-        self.qemu_kvm = False
         Header.__init__(self)
+        self.kvm_help = []
+        self.kvm_options = []
+        self.qemu_kvm = False
 
     def prepare_generator(self):
         """Collect all what is need to run.
         Even if the qemu-kvm is not installed on the system.
         """
-        self.get_module_path()
         if self.get_kvm_path_from_file():
-            self.update_kvm_global_config()
-            if not self.get_qemu_kvm_help():
+            if not self.get_kvm_help():
                 print "This is not a qemu-kvm binary."
-                print "Edit %s to correct it." % self.get_abs_path_kvm_config()
+                print "Edit %s to correct it." % self.kvm_config_file
                 sys.exit(1)
+            else:
+                self.update_kvm_conf()
         elif self.get_kvm_path_from_input():
-            if not self.get_qemu_kvm_help():
+            if not self.get_kvm_help():
                 print "This is not a qemu-kvm binary."
                 print "You have to call the command below again."
                 print "Execute: generate-kvm-options -g"
                 sys.exit(1)
+            else:
+                self.update_kvm_conf()
         else:
             print "You have to update the config file manually." 
-            print "You have set the correct path in for qemu-kvm in %s" % \
-                self.get_abs_path_kvm_config()
-
-    def get_abs_path_kvm_config(self):
-        """Build and return the absolute path for global config."""
-        kvm_config = os.path.join(self.kvm_base_config_dir, 
-                                  self._kvm_conf_dir, 
-                                  self._kvm_conf_name)
-        if os.path.isfile(kvm_config):
-            return kvm_config
-        else:
-            return False
+            print "You have set the correct path for qemu-kvm in %s" % \
+                self.kvm_config_file
+            sys.exit(1)
     
-    def get_module_path(self):
-        """Get absolute path to kvmtools."""
-        self.module_path = os.path.abspath(os.path.dirname(kvmtools.__file__))
-        self.qemu_kvm_options_file = os.path.join(self.module_path,
-                                     self.qemu_kvm_options_file_name)
-
+   
     def get_kvm_path_from_file(self):
-        """Try to find the absolute path.
-        First from default kvm.cfg.
-        If its failed then give the user the possibility 
-        to give the absolute path or name to the qemu-kvm binary.
+        """Try to find the absolute path for key "qemu-kvm" value 
+        in kvm_config_file.
         """
-        kvm_config = self.parse_config(self.get_abs_path_kvm_config())
+        kvm_config = Parser().parse_config(self.kvm_config_file)
         if "qemu-kvm" in kvm_config:
             kvm_name = kvm_config["qemu-kvm"]
             for i in kvm_name.split(","):
@@ -90,14 +78,13 @@ class CheckKvm(Parser, Header):
                 else:
                     print "Could not found '%s' in your PATH" % result
 
-    def update_kvm_global_config(self):
+    def update_kvm_conf(self):
         """Replace the qemu-kvm default value in the global config file."""
-        kvm_config = self.get_abs_path_kvm_config() 
-        print "Update %s" % kvm_config
-        if os.access(kvm_config, os.W_OK):
+        print "Update %s" % self.kvm_config_file
+        if os.access(self.kvm_config_file, os.W_OK):
             fd = None
             try:
-                fd = open(kvm_config, "r")
+                fd = open(self.kvm_config_file, "r")
                 lines = fd.readlines()
                 new_lines = []
                 for line in lines:
@@ -107,39 +94,54 @@ class CheckKvm(Parser, Header):
                     else:
                         new_lines.append(line)
             except IOError, e:
-                print "Operation failed: %s on %s" % (e, kvm_confg)
+                print "Operation failed: %s on %s" % (e, self.kvm_confg_file)
             finally:
                 if fd:
                     fd.close()
                     if len(new_lines) > 0:
                         try:
-                            fd = open(kvm_config, "w")
+                            fd = open(self.kvm_config_file, "w")
                             for line in new_lines:
                                 fd.write(line)
                         except IOError, e:
                             print "Operation failed: %s on %s" % (e, 
-                                kvm_config)
+                                self.kvm_config_file)
                         finally:
                             if fd:
                                 print "Done"
                                 fd.close()
         else:
-            print "No write permission to %s." % kvm_config
+            print "No write permission to %s." % self.kvm_config_file
             sys.exit(1)
 
-    def get_qemu_kvm_help(self):
+    def get_kvm_help(self):
         """This call the give qemu-kvm name
         and check if the help if in the first line the qemu name.
         This check have to be done, because it will write in the config file.
         Its return the help 
         """
-        self.qemu_kvm_options = []
+        self.kvm_options = []
         process = Popen([self.qemu_kvm, "-h"], stdout=PIPE, stderr=PIPE)
         result = process.communicate()[0]
-        qemu_kvm_help = result.split("\n")
-        if "QEMU" in qemu_kvm_help[0]:
-           self.qemu_kvm_options = qemu_kvm_help
+        kvm_help = result.split("\n")
+        if "QEMU" in kvm_help[0]:
+           self.kvm_options = kvm_help
            return True
         else:
             return False
+        
+
+    def check_qemu_kvm_path(self):
+        """The qemu-kvm is not a valid parameter.
+        This can have a single value or comma separated values.
+        """
+        config = Parser().parse_config(self.kvm_config_file)
+        print config
+        if "qemu-kvm" not in config:
+            print "Copy this example:"
+            print "\tqemu-kvm = qemu-kvm, kvm"
+            sys.exit(1)
+        else:
+            if not self.check_qemu_kvm_options_file():
+                self.prepare_generator()
 

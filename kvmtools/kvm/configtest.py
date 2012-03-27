@@ -12,8 +12,8 @@ import os
 try:
     import argparse
 except ImportError:
-    import kvmtools.config.argsparse as argsparse
-from kvmtools.config.parser import Parser
+    import kvmtools.argsparse as argsparse
+from kvmtools.config.kvm_parser import Parser
 
 
 class TestConfig(object):

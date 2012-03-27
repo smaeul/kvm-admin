@@ -9,35 +9,36 @@
 #
 
 """
-(c) 2007-2011 Jens Kasten <jens@kasten-edv.de>
+(c) 2007-2012 Jens Kasten <jens@kasten-edv.de>
 """
 
 import os
 import sys
 import re
 
+IS_QEMU_KVM_OPTION = False
 try:
-    from kvmtools.qemu_kvm_options import qemu_kvm_options
-except ImportError:
-    # if the file qemu_kvm_options.py does not exists as first run
-    # just create an empty dictionary
-    qemu_kvm_options = {}
-from kvmtools.functions import qemu_kvm_error_message
-
+    from kvmtools.kvm_options import kvm_options
+    IS_QEMU_KVM_OPTION = True
+except ImportError, e:
+    kvm_options = {}
+from kvmtools.header import Header
 
 class Parser(object):
     """Simple config parser for kvm guest config file."""
     
-    def _check_config_syntax(self, config_name):
-        """Return a cleaned dictionary from a befor readed config file."""
-        if not os.path.isfile(config_name):
-            return False
+    def _check_config_syntax(self, config_file):
+        """Return a dictionary from given config file."""
+        assert type(config_file) is str, "No config file is set"
+        if not os.path.isfile(config_file):
+            print "Configfile does not exist: %s" % config_file
+            sys.exit(1)
         else:
             counter = 1
             config = []
             fd = None
             try:
-                fd = open(config_name)
+                fd = open(config_file)
                 lines = fd.readlines()
                 # remove withespace but not and arguments 
                 for line in lines:
@@ -47,19 +48,20 @@ class Parser(object):
                         # check for sign '=' 
                         if len(temp) == 1:
                             msg = "Missing sign '=' in %s on line %s" % \
-                                (config_name, counter)
-                            qemu_kvm_error(msg)
+                                (config_file, counter)
+                            raise RuntimeError(msg)
                         # remove all withespace from string
                         key = re.sub(r'\s', '', temp[0])
-                        if key not in self.exclude_options and key not in qemu_kvm_options:
-                            msg = "Not a qemu-kvm command: '%s' in %s on line %s" % \
-                                (key, config_name, counter)
-                            qemu_kvm_error(msg)
+                        if key not in Header().exclude_options \
+                            and key not in kvm_options:
+                            print "Not a qemu-kvm command: '%s' in %s on line %s" % \
+                                 (key, config_file, counter)
+                            sys.exit(1)
                         # remove comments
                         if len(temp) == 1:
                             msg = "Missing value in %s on line %s" % \
-                                (config_name, counter)
-                            qemu_kvm_error(msg)
+                                (config_file, counter)
+                            raise RuntimeError(msg)
                         else:
                             value = temp[1].split("#")[0].strip()
                         content = "=".join([key, value])
@@ -70,11 +72,11 @@ class Parser(object):
                     fd.close()
             return config
 
-    def parse_config(self, config_name):
+    def parse_config(self, config_file):
         """Return a dictionary"""
-        lines = self._check_config_syntax(config_name)
+        lines = self._check_config_syntax(config_file)
         if not lines:
-            return 
+            return False
         config = {}
         drive = {}
         drive_counter = 0

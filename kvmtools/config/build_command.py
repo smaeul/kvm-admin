@@ -1,29 +1,23 @@
 #
-# build command to executing
+# Module build command.
 #
 
 """
 (c) 2011 Jens Kasten <jens@kasten-edv.de>
 """
 
-from kvmtools.kvm.build_config import BuildConfig
 
-
-class BuildCommand(BuildConfig):
-    """Build command"""
+class BuildCommand(object):
+    """Build a command for executing ad a string to show the command."""
     
     def __init__(self):
-        BuildConfig.__init__(self)
-        self.commmand = ()
+        self.command = ()
 
     def build_command(self):
         """Create a tuple command. 
         First entry is a list that is executed via subprocess
         and the second is a string to display the command.
         """
-        self.build_config()
-        if self.config is None:
-            return None 
         cmd_execute = []
         cmd_string = ""
         # Start to build a list

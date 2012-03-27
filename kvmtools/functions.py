@@ -20,7 +20,7 @@ def which(file_name):
             return service
     return False
 
-qemu_kvm_error_message = []
-def qemu_kvm_error(self, message):
+kvm_error_message = []
+def kvm_error(message):
     """Just a collection of errors in a list."""
-    qemu_kvm_error_message.append(message)   
+    kvm_error_message.append(message)   
