@@ -31,8 +31,8 @@ class Parser(object):
         """Return a dictionary from given config file."""
         assert type(config_file) is str, "No config file is set"
         if not os.path.isfile(config_file):
-            print "Configfile does not exist: %s" % config_file
-            sys.exit(1)
+            #print "Configfile does not exist: %s" % config_file
+            return False 
         else:
             counter = 1
             config = []
