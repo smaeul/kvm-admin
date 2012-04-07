@@ -57,7 +57,7 @@ class Parser(object):
                                 and key not in kvm_options:
                                 print "Not a qemu-kvm command: '%s' in %s on line %s" % \
                                      (key, config_file, counter)
-                                sys.exit(1)
+                                #sys.exit(1)
                         # remove comments
                         if len(temp) == 1:
                             msg = "Missing value in %s on line %s" % \

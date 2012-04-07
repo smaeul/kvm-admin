@@ -1,38 +1,28 @@
 =========
 kvm-tools
 =========
-Depend on Python version >= 2.4 and < 3.0
+A commandline script to use a simple domain(guest) configuration file.
 
-A commandline script to use a simple guest configuration file.
-
-usage: kvm-admin [-h]
-                 domain_name
+usage: kvm-admin [-h] [--debug]
                  {boot,create,kill,modify,monitor,reboot,show,shutdown,status}
-                 [option [option ...]]
+                 ...
 
 optional arguments:
   -h, --help            show this help message and exit
+  --debug               Print full python traceback.
 
-QEMU-KVM domain:
-  domain_name           Choose a KVM domain name, its the same like the
-                        configuration file name
+All commands for kvm-admin:
+  valid kvm-admin commands
 
-Action for a domain:
   {boot,create,kill,modify,monitor,reboot,show,shutdown,status}
-                        Choose an action for the KVM guest
-
-Monitor command:
-  option                One ore more arguments can pass to the monitor.
-
-usage: kvm-admin [-h] [--generate-options]
-                 kvm_guest_name action [monitor [monitor ...]]
+                        additional help
 
 =========
 Depencies
 =========
 List: python >=2.4 and < 3.0 
       python-argparse (debian package name)
-        optional using argparse from kvmtools.config.argparse 
+        optional using argparse from kvmtools.argparse 
 
 
 All others are standard python library.
@@ -40,12 +30,10 @@ All others are standard python library.
 ======
 Update
 ======
-When qemu-kvm change or add parameter, than the this run this command:
-	generate-kvm-options --generate
+When you update qemu-kvm than run this command:
+	generate-kvm-options --generate --verbose
 
-# Fix: and a config with current qemu-kvm verion and compare it each run
-
-This build a new list of all availables qemu-kvm options.
+This build a list of all availables qemu-kvm options.
 This is used to check if the given key in the configuration file 
 is a valid qemu-kvm option.
 
@@ -60,7 +48,7 @@ Downlaod
 ========
 1. The scripts can downloaded via webrowser as bz2, zip, or gzip archive.
 	http://hg.kasten-edv.de/kvm-tools
-	https://hg.kasten-edv.de/kvm-tools --insecure
+	https://hg.kasten-edv.de/kvm-tools 
 
 2. clone the mercurial repository. 
     hg clone http://hg.kasten-edv.de/kvm-tools  
@@ -77,18 +65,20 @@ System preparation
 ==================
 Its recommend to use an unprivileged user.
 It can set in the global configuration file /etc/kvm/config/kvm.cfg
+
 Uncomment:
 	# optional, add an user kvm to run the qemu-kvm process
 	runas = kvm
 
-Each guest configuration file can have this option too.
+Each domain configuration file can have this option too to use for each domain 
+a different user.
 
-Example to use a system user kvm on debian. 
-If qemu-kvm already is installed,then add only the group kvm
+Example to use an system user kvm on debian. 
+If qemu-kvm already is installed then add only the group kvm
 and modify the /etc/passwd.
 
-	addgroup --gid 116 kvm_test
-	adduser --system --gid 116 --uid 116 --home /var/run/kvm_test --disabled-password --shell /bin/false kvm
+	addgroup --gid 116 kvm
+	adduser --system --gid 116 --uid 116 --home /var/run/kvm --disabled-password --shell /bin/false kvm
 	chown kvm:kvm /var/run/kvm  (or /usr/local/var/run/kvm)
     chmod 750 /var/run/kvm  (or /usr/local/var/run/kvm)
 
@@ -106,7 +96,7 @@ For using tap device:
 ===================
 Guest configuration
 ===================
-An example for a domain(guest) configuration file.
+An example for a domain configuration file.
 The syntax values are 1:1 on commandline usage the only differ is instead using
 	-option_name value
 	option_name = value
@@ -128,7 +118,7 @@ This build a very minimalistic domain config through a console based dialog.
 Example domain configuration file:
     name = my_first_domain
     # first drive
-    drive = file=/home/kvm/my_testfile.img,if=virtio,index=0,boot=on,cache=none
+    drive = file=/home/kvm/my_testfile.img,if=virtio,index=0,cache=none
     # second drive 
     drive = file=/home/kvm/my_swapfile.img,if=virtio,index=1,cache=none
     # memory for using in the guest
@@ -165,6 +155,15 @@ Example kvm.cfg:
     # optinal, run as kvm user
     runas = kvm
 
+================
+Sound for guests
+================
+You have to do this as root user:
+    modprobe -v snd-pcm-oss
+Or:
+    export QEMU_AUDIO_DRV=alsa 
+
+
 ====================
 Hotplug a pci device
 ====================
@@ -183,12 +182,11 @@ Monitor using
 =============
 You can communicate with the guest monitor on commandline.
 Each command behind the monitor concatenate to a string. 
-No quotations are needed.
 
-usage: kvm-admin domain_name monitor help
+usage: kvm-admin monitor domain_name option
 
 Reboot or shutdown or status can send via the monitor too.
-    kvm-admin domain_name monitor system_powerdown
+    kvm-admin monitor domain_name system_powerdown
 
 You can use the command line monitor like the orgin "ALT + CTRL + 2" monitor.
 You can add an usb device or ecject cdrom etc.

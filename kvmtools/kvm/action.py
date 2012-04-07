@@ -18,7 +18,7 @@ class Action(Domain):
 
     def __init__(self):
         Domain.__init__(self)
-        self.kvm_errors = []
+        #self.doc = False
 
     def kvm_error(self, error_message):
         """Append a error message to error list."""
@@ -34,15 +34,17 @@ class Action(Domain):
         return actions
 
     def kvm_show_action(self):
-        """show the command as string"""
-        print self.command[1]
+        """Show the qemu-kvm command as string."""
+        doc = "teste a show"
+        print "default show"
+        #print self.command[1]
 
     def kvm_modify_action(self):
-        """Modify a domain configuration file."""
+        """Modify a qemu-kvm domain configuration file."""
         self.modify()
 
     def kvm_create_action(self):
-        """Create a domain configuration file."""
+        """Create a basic qemu-kvm domain configuration file."""
         if os.path.isfile(self.kvm_domain_file):
             self.modify()
         else:
@@ -52,7 +54,7 @@ class Action(Domain):
     #    self.kvm_monitor_action(command_monitor)
 
     def kvm_monitor_action(self, command_monitor):
-        """Monitor to the qemu-kvm guest on commandline."""
+        """Monitor a qemu-kvm domain."""
         if not self.is_running():
             print ("Guest is not running.")
             return
@@ -62,7 +64,7 @@ class Action(Domain):
         print data
 
     def kvm_boot_action(self):
-        """Boot the qemu-kvm guest."""
+        """Boot a qemu-kvm domain."""
         if self.is_running():
             print ("Guest already running.")
             return True
@@ -81,7 +83,7 @@ class Action(Domain):
             return (False, error_msg)
 
     def kvm_reboot_action(self):
-        """Reboot the guest."""
+        """Reboot a qemu-kvm domain."""
         if not self.is_running():
             print ("Guest is not running.")
             return False
@@ -89,7 +91,7 @@ class Action(Domain):
             print ("Could not send signal reboot to guest.")
 
     def kvm_shutdown_action(self):
-        """Shutdown the guest.
+        """Shutdown a qemu-kvm domain.
         Its work for windows and linux guests, 
         but not on linux when the Xserver is looked.
         """
@@ -128,7 +130,7 @@ class Action(Domain):
             print ("Could not send signal shutdown.")
 
     def kvm_kill_action(self):
-        """Kill the guest.
+        """Kill a qemu-kvm domain.
         Dangerous option, its simply like pull the power cable out.
         """
         if not self.is_running():
@@ -145,7 +147,7 @@ class Action(Domain):
             sys.exit(1)
 
     def kvm_status_action(self):
-        """Show information about the guest."""
+        """Show information about qemu-kvm domain(s)."""
         if not self.is_running():
             print ("Guest is not running.")
             return False

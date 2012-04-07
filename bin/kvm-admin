@@ -56,7 +56,6 @@ class KvmAdmin(Action):
         # load the methods which are available for doamin
         Action.__init__(self)
         self.value = None
-        self.debug = False
 
     def run(self):
         """Do an action for a domain.
@@ -65,12 +64,9 @@ class KvmAdmin(Action):
         kvm_method = "".join(["kvm_", self.action, "_action"])
         self.monitor_open()
         if "monitor" in self.action or "migrate" in self.action:
-            if self.monitor:
-                # build string from third option till end
-                cmd_monitor = " ".join(str(i) for i in self.monitor)
-                getattr(self, kvm_method)(cmd_monitor)
-            else:
-                raise Exception("Missing monitor argument. Type 'help'.")
+            # build string from third option till end
+            cmd_monitor = " ".join(str(i) for i in self.monitor)
+            getattr(self, kvm_method)(cmd_monitor)
         else:
             getattr(self, kvm_method)()
         self.monitor_close()
@@ -97,39 +93,55 @@ def main():
     domains = kvm_admin.available_domains()
 
     # manage the commandline arguments
-    parser = argparse.ArgumentParser(
-        epilog="Available domains: %s" % ", ".join(domains))
+    parser = argparse.ArgumentParser()
     parser.add_argument("--debug", default=False, action="store_true",
-        help="Print full execption output.")
-
-    # if you want different order for arguments, just change group1 with group2
-    group1 = parser.add_argument_group(_("QEMU-KVM domain"))
-    group1.add_argument("domain", default=False,
-        metavar=(_("domain_name")),
-        help=_("Choose a KVM domain name, "
-             "its the same like the configuration file name"))
-    group2 = parser.add_argument_group("Action for a domain")
-    group2.add_argument("action", choices=actions, 
-        help=_("Choose an action for the KVM guest"))
+        help="Print full python traceback.")
     
-    group3 = parser.add_argument_group("Monitor commands")
-    group3.add_argument("monitor", nargs="*", default=False,
-        metavar="option",
-        help=_("One ore more arguments can pass to the monitor."))
+    # add action as subparser
+    subparser = parser.add_subparsers(title="All commands for kvm-admin",
+        description="valid kvm-admin commands",
+        help="additional help")
+    for i in actions:
+        my_help = getattr(kvm_admin, "kvm_%s_action" % i).__doc__
+        action = subparser.add_parser(i)
+        action.add_argument(i, action="store", metavar=("domain_name"), help=my_help)
+        if i == "monitor":               
+            action.add_argument("args_monitor", nargs="*", default=[],
+                metavar=("monitor argument"),
+                help=_("One ore more arguments to pass to the qemu-kvm monitor."))
     
     args = parser.parse_args()
-
-    if args.action == "create" or args.domain in domains: 
-        kvm_admin.kvm_domain_name = args.domain
-    else:
-        parser.error(_("Available domains: %s") % domains)
-
-    kvm_admin.action = args.action
-    kvm_admin.monitor = args.monitor
+    
     kvm_admin.debug = args.debug
 
-    if not args.action == "modify" and kvm_admin.show_error() :
+    # assign the action and domain name dynamically
+    for action in actions:
+        if action in args: 
+            kvm_admin.action = action
+            kvm_admin.kvm_domain_name = str(getattr(args, action))
+            break
+
+    # assign the optional monitor arguments 
+    if "args_monitor" in args and len(args.args_monitor) > 0:
+        kvm_admin.monitor = args.args_monitor        
+    else:
+        # set default monitor to help
+        kvm_admin.monitor =["help"] 
+
+    # assign all as domain name its used for status
+    if kvm_admin.kvm_domain_name == "all" and kvm_admin.action == "status":
+        domains.append("all")
+
+    # check if the domain name has a config file and is not create
+    if not kvm_admin.kvm_domain_name in domains and not "create" == kvm_admin.action:  
+        parser.error(_("Available domains\n%s") % domains)
+
+
+    # check if some error occurs
+    if not kvm_admin.action == "modify" and kvm_admin.show_error():
         sys.exit(1)
+    
+    # run it
     if args.debug:
         kvm_admin.run()
     else:
@@ -137,6 +149,7 @@ def main():
             kvm_admin.run()
         except Exception, error_msg:
             print error_msg
+            sys.exit(1)
             
         
 if __name__ == "__main__":
@@ -144,4 +157,4 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print _("\rUser break.")
-        sys.exit(0)
+        sys.exit(1)

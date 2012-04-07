@@ -17,6 +17,7 @@ class Header(object):
     """ 
 
     def __init__(self):
+        self.kvm_errors = []
         #########
         # Paths #
         #########
