@@ -18,7 +18,7 @@ class Action(Domain):
 
     def __init__(self):
         Domain.__init__(self)
-        #self.doc = False
+        self.kvm_status_full = False
 
     def kvm_error(self, error_message):
         """Append a error message to error list."""
@@ -146,20 +146,66 @@ class Action(Domain):
             self.is_running()
             sys.exit(1)
 
+    def _status_all(self):
+        """Show status information form all running qemu-kvm domains."""
+        domains = {}
+        # list all files in run dir and get pidfile socketfile and domain name
+        for i in os.listdir(self.kvm_run_dir):
+            domain_name = i.rsplit(".", 1)[0]
+            if not domain_name in domains:
+                domains[domain_name] = {}
+            if i.endswith(".pid"):
+                domains[domain_name]["pidfile"] = os.path.join(self.kvm_run_dir, i)
+            if i.endswith(".socket"):
+                domains[domain_name]["socketfile"] = os.path.join(self.kvm_run_dir, i)
+        # iter over the domains and set the necessary values on the fly
+        counter = len(domains)
+        for domain in domains.iterkeys():
+            self.kvm_pidfile = domains[domain]["pidfile"]
+            self.kvm_socketfile = domains[domain]["socketfile"]
+            self.kvm_domain_name = domain
+            self.monitor_open()
+            self._get_uuid()
+            self._get_status()
+            self._get_process_info()
+            print ("Domain name: %s :: Process name: %s" % \
+                (domain, self.kvm_process_name))
+            print ("Domain uuid: %s" % self.kvm_process_uuid)
+            print ("%s :: Process state: %s" % \
+                (self.kvm_process_status, self.kvm_process_state))
+            if self.kvm_status_full:
+                self._get_vnc()
+                print "UID: %s" % self.kvm_process_uid
+                print "GID: %s" % self.kvm_process_gid
+                print "Groups: %s" % self.kvm_process_groups
+                print "PID: %s :: PPID: %s" % \
+                    (self.kvm_process_pid, self.kvm_process_ppid)
+                print ("VNC information")
+                print self.kvm_process_vnc
+            self.monitor_close()
+            # show only line for seperation if more than one domains
+            if counter > 1:
+                print "-" * 80
+            counter -= 1
+
     def kvm_status_action(self):
         """Show information about qemu-kvm domain(s)."""
+        if self.kvm_domain_name == "all":
+            self._status_all()
+            return True
         if not self.is_running():
             print ("Guest is not running.")
             return False
         self.get_process_information()
-        print ("Process name: %s" % self.kvm_process_name)
-        print ("Domain uuid:  %s" % self.kvm_process_uuid)
-        print ("%s :: Process state: %s" % (self.kvm_process_status,
-            self.kvm_process_state))
+        print ("Domain name: %s :: Process name: %s" % \
+            (self.kvm_domain_name, self.kvm_process_name))
+        print ("Domain uuid: %s" % self.kvm_process_uuid)
+        print ("%s :: Process state: %s" % \
+            (self.kvm_process_status, self.kvm_process_state))
         print "UID: %s" % self.kvm_process_uid
         print "GID: %s" % self.kvm_process_gid
         print "Groups: %s" % self.kvm_process_groups
-        print "PID: %s :: PPID: %s" % (self.kvm_process_pid, 
-            self.kvm_process_ppid)
+        print "PID: %s :: PPID: %s" % \
+            (self.kvm_process_pid, self.kvm_process_ppid)
         print ("VNC information")
         print self.kvm_process_vnc

@@ -17,6 +17,7 @@ All commands for kvm-admin:
   {boot,create,kill,modify,monitor,reboot,show,shutdown,status}
                         additional help
 
+
 =========
 Depencies
 =========
@@ -26,6 +27,7 @@ List: python >=2.4 and < 3.0
 
 
 All others are standard python library.
+
 
 ======
 Update
@@ -37,11 +39,15 @@ This build a list of all availables qemu-kvm options.
 This is used to check if the given key in the configuration file 
 is a valid qemu-kvm option.
 
+
 ====
 Info
 ====
 The qemu-kvm option for monitor, and pidfile has default values.
 But this options can be overriden in each domain configuration file.
+The qemu-kvm domain name should not be "all".
+See status description below.
+
 
 ========
 Downlaod
@@ -54,11 +60,13 @@ Downlaod
     hg clone http://hg.kasten-edv.de/kvm-tools  
     hg clone https://hg.kasten-edv.de/kvm-tools --insecure
 
+
 ============
 Installation
 ============
 Look at INSTALL.txt.
 # Fix: debian package and new setup.py 
+
 
 ==================
 System preparation
@@ -82,6 +90,7 @@ and modify the /etc/passwd.
 	chown kvm:kvm /var/run/kvm  (or /usr/local/var/run/kvm)
     chmod 750 /var/run/kvm  (or /usr/local/var/run/kvm)
 
+
 =============
 Kernel module
 =============
@@ -93,9 +102,10 @@ kvm-module:
 For using tap device:
 	modprobe -v tun
 
-===================
-Guest configuration
-===================
+
+=============================
+QEMU-KVM domain configuration
+=============================
 An example for a domain configuration file.
 The syntax values are 1:1 on commandline usage the only differ is instead using
 	-option_name value
@@ -155,6 +165,7 @@ Example kvm.cfg:
     # optinal, run as kvm user
     runas = kvm
 
+
 ================
 Sound for guests
 ================
@@ -176,6 +187,21 @@ Use the monitor to hotplug a device:
     kvm-admin my_guest monitor pci_add auto nic model=e1000
     # add a harddrive to guest
     kvm-admin my_guest monitor pci_add auto storage file=/path/to/partion_or_file,if=virtio
+
+
+============================
+Query qemu-kvm doamin status
+============================
+For a single qemu-kvm domain use:
+    kvm-admin status domain_name
+
+For all running domains use:
+    # argument --full is optional and print more information
+    kvm-admin status all --full
+
+Info: The qemu-kvm domain name should not be "all" because of using in status
+      report.
+
 
 =============
 Monitor using

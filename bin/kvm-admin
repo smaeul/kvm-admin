@@ -104,10 +104,15 @@ def main():
     for i in actions:
         my_help = getattr(kvm_admin, "kvm_%s_action" % i).__doc__
         action = subparser.add_parser(i)
-        action.add_argument(i, action="store", metavar=("domain_name"), help=my_help)
+        action.add_argument(i, action="store", metavar=("domain"), 
+            help=my_help)
+        if i == "status":
+            action.add_argument("--full", default=False, action="store_true", 
+                #metavar=("full status information"),
+                help=_("Display full status information for each running qemu-kvm domain."))
         if i == "monitor":               
             action.add_argument("args_monitor", nargs="*", default=[],
-                metavar=("monitor argument"),
+                #metavar=("monitor argument"),
                 help=_("One ore more arguments to pass to the qemu-kvm monitor."))
     
     args = parser.parse_args()
@@ -130,7 +135,9 @@ def main():
 
     # assign all as domain name its used for status
     if kvm_admin.kvm_domain_name == "all" and kvm_admin.action == "status":
+        # append "all" as pseudo domain name
         domains.append("all")
+        kvm_admin.kvm_status_full = args.full
 
     # check if the domain name has a config file and is not create
     if not kvm_admin.kvm_domain_name in domains and not "create" == kvm_admin.action:  
