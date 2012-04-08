@@ -175,8 +175,8 @@ class CreateDialogConsole(object):
                 print "Index not in list."
         drive_list = ["# harddive (drive)"]
         for key, value in drives.iteritems():
-            to_write = "drive = file=%s,index=%d,media=%s,cache=%s,boot=%s" % \
-               (value["file"], value["index"], value["media"], 
+            to_write = "drive = file=%s,index=%d,if=%s,media=%s,cache=%s,boot=%s" % \
+               (value["file"], value["index"], value["if"], value["media"], 
                 value["cache"], value["boot"])
             drive_list.append(to_write)
         return "\n".join(drive_list)

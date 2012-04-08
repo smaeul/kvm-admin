@@ -42,6 +42,9 @@ class Domain(KvmConfig,  Monitor, System, CreateDialogConsole):
         """Create a minimalistic domain config file."""
         print "Creating the domain config file: %s" % self.kvm_domain_file
         self.create_dialog()
+        # delete the autogenerate uuid so that is it append properly
+        del self.config["uuid"]
+        self._add_uuid()
         self.modify()
 
     def modify(self):
