@@ -49,7 +49,7 @@ dirs.append("kvmtools")
 
 setup(
     name = "kvmtools",
-    version = "0.1.7.5",
+    version = "0.1.7.6",
     keywords = ["kvm-admin", "kvmtools"],
     author = "Jens Kasten",
     author_email = "jens@kasten-edv.de",

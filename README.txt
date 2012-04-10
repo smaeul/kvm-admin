@@ -3,6 +3,17 @@ kvm-tools
 =========
 A commandline script to use a simple domain(guest) configuration file.
 
+
+=====
+Usage
+=====
+### kvm-admin ####
+usage: kvm-admin [-h] [--debug] [--verbose]
+                 {boot,create,kill,modify,monitor,reboot,show,shutdown,status}
+                 ...
+kvm-admin: error: too few arguments
+
+### kvm-admin -h ###
 usage: kvm-admin [-h] [--debug]
                  {boot,create,kill,modify,monitor,reboot,show,shutdown,status}
                  ...
@@ -16,6 +27,44 @@ All commands for kvm-admin:
 
   {boot,create,kill,modify,monitor,reboot,show,shutdown,status}
                         additional help
+
+-----------------------------------------------------------------------------
+### kvm-admin status all ###
+List all running qemu-kvm domains
+
+-----------------------------------------------------------------------------
+Arguments with optional arguments:
+
+### kvm-admin status -h ###
+usage: kvm-admin status [-h] [--full] domain
+
+positional arguments:
+  domain      Show information about qemu-kvm domain(s).
+
+optional arguments:
+  -h, --help  show this help message and exit
+  --full      Display full status information for each running qemu-kvm
+              domain.
+
+#### kvm-admin shutdown -h ###
+usage: kvm-admin shutdown [-h] [--time-out 'in seconds']
+                          [--wait-to-send-enter 'in seconds']
+                          domain
+
+positional arguments:
+  domain                Shutdown a qemu-kvm domain. Its work for windows and
+                        linux guests, but not on linux when the Xserver is
+                        looked.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --time-out 'in seconds'
+                        Set the time out for waiting till the qemu-kvm domain,
+                        will be killed.
+  --wait-to-send-enter 'in seconds'
+                        Set this will send, after a given time in seconds, an
+                        enter signal to the qemu-kvm domain for the grafical
+                        shutdown dialog.
 
 
 =========

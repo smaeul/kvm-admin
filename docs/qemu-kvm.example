@@ -1,0 +1,30 @@
+#!/sbin/runscript
+# Copyright 1999-2011 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+# $Header: $
+
+qemu_kvm_auto="/etc/kvm/auto"
+qemu_kvm_run="/var/run/kvm"
+
+# second to wait befor the qemu-kvm domain get killed
+TIME_OUT=30
+# retry if it fails to boot
+RETRY=2
+
+start() {
+        for i in `ls $qemu_kvm_auto`; do
+            ebegin "Starting ${i}"
+            kvm-admin boot $i
+            eend $?
+        done
+}
+
+stop() {
+        for i in `ls $qemu_kvm_auto`; do
+            ebegin "Stopping ${i}"
+            kvm-admin shutdown $i --time-out $TIME_OUT
+            eend $?
+        done
+}
+
+
