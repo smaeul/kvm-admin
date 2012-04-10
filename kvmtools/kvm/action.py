@@ -130,7 +130,12 @@ class Action(Domain):
                 # this is only usefull for init.d system 
                 # otherwise if the domain could from any reason not shutdown
                 # the whole shutdown process is blocked
-                if (timer + self.shudown_time_out) < time():
+                if self.verbose:
+                    sys.stdout.write("\t\tkilled in %0.1f seconds.\r" % \
+                        ((timer + self.shutdown_time_out) - time() - 0.05))
+                    sys.stdout.flush()
+                    
+                if (timer + self.shutdown_time_out) < (time() -0.05):
                     self.kvm_kill_action()
         else:
             print ("Could not send signal shutdown.")
