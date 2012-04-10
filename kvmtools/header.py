@@ -66,4 +66,10 @@ class Header(object):
         self.is_enabled = "enabled"
         # files which should not interpreted as domain config file
         self.exclude_backup_files = [".swp", ]
+        # time to wait for sending a enter command to a domain for 
+        # grafic environment
+        self.shutdown_wait_to_send_enter = None
+        # default value to wait till a domain is killed 
+        # when the timer is reached
+        self.shutdown_time_out = 30 
 

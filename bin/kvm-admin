@@ -109,14 +109,27 @@ def main():
         if i == "status":
             action.add_argument("--full", default=False, action="store_true", 
                 #metavar=("full status information"),
-                help=_("Display full status information for each running qemu-kvm domain."))
+                help=_("""Display full status information for each 
+                    running qemu-kvm domain."""))
         if i == "monitor":               
             action.add_argument("args_monitor", nargs="*", default=[],
                 #metavar=("monitor argument"),
                 help=_("One ore more arguments to pass to the qemu-kvm monitor."))
+        if i == "shutdown":
+            action.add_argument("--time-out", type=int, 
+                action="store", metavar="'in seconds'",
+                help=_("""Set the time out for waiting till the qemu-kvm domain,
+                    will be killed."""))
+            action.add_argument("--wait-to-send-enter", type=int,
+                action="store", metavar="'in seconds'",
+                help=_("""Set this will send, after a given time in seconds,
+                    an enter signal to the qemu-kvm domain for the 
+                    grafical shutdown dialog."""))
     
     args = parser.parse_args()
     
+    print args
+
     kvm_admin.debug = args.debug
 
     # assign the action and domain name dynamically
@@ -126,13 +139,18 @@ def main():
             kvm_admin.kvm_domain_name = str(getattr(args, action))
             break
 
-    # assign the optional monitor arguments 
+    # assign optional monitor arguments 
     if "args_monitor" in args and len(args.args_monitor) > 0:
         kvm_admin.monitor = args.args_monitor        
     else:
         # set default monitor to help
         kvm_admin.monitor =["help"] 
 
+    # assign optional argumente for shutdown
+    if kvm_admin.action == "shutdown":
+        kvm_admin.shutdown_wait_to_send_enter = args.wait_to_send_enter
+        kvm_admin.shutdown_time_out = args.time_out
+       
     # assign all as domain name its used for status
     if kvm_admin.kvm_domain_name == "all" and kvm_admin.action == "status":
         # append "all" as pseudo domain name
@@ -142,7 +160,6 @@ def main():
     # check if the domain name has a config file and is not create
     if not kvm_admin.kvm_domain_name in domains and not "create" == kvm_admin.action:  
         parser.error(_("Available domains\n%s") % domains)
-
 
     # check if some error occurs
     if not kvm_admin.action == "modify" and kvm_admin.show_error():

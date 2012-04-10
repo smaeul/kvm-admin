@@ -9,7 +9,7 @@
 import os
 import sys
 from subprocess import Popen, PIPE
-from time import sleep
+from time import sleep, time
 
 from kvmtools.kvm.domain import Domain
 
@@ -35,9 +35,7 @@ class Action(Domain):
 
     def kvm_show_action(self):
         """Show the qemu-kvm command as string."""
-        doc = "teste a show"
-        print "default show"
-        #print self.command[1]
+        print self.command[1]
 
     def kvm_modify_action(self):
         """Modify a qemu-kvm domain configuration file."""
@@ -101,9 +99,11 @@ class Action(Domain):
         flag = 0
         if self.monitor_send(self.qemu_monitor["shutdown"]):
             # set a time  out to wait, that the shutdown dialog appears
-            sleep(1.5)
-            self.monitor_send(self.qemu_monitor["enter"])
-            print ("Shutdown ...")
+            if self.shutdown_wait_to_send_enter:
+                sleep(self.shutdown_wait_to_send_enter)
+                self.monitor_send(self.qemu_monitor["enter"])
+            # set start timer
+            timer = time() 
             while True:
                 # some fancy ticker
                 if flag == 0:
@@ -126,6 +126,12 @@ class Action(Domain):
                     sys.stdout.write("waiting ... %s\r" % sign)
                     sys.stdout.flush()
                     sleep(0.05)
+                # when the time out is reached kill the qemu-kvm domain
+                # this is only usefull for init.d system 
+                # otherwise if the domain could from any reason not shutdown
+                # the whole shutdown process is blocked
+                if (timer + self.shudown_time_out) < time():
+                    self.kvm_kill_action()
         else:
             print ("Could not send signal shutdown.")
 
@@ -137,7 +143,7 @@ class Action(Domain):
             print ("Guest is not running.")
             return False
         try:    
-            os.kill(self.kvm_pid, 9)
+            os.kill(seto,lf.kvm_pid, 9)
             sleep(0.8)
             self.is_running()
             sys.exit(0)
