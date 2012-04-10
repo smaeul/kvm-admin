@@ -143,7 +143,7 @@ class Action(Domain):
             print ("Guest is not running.")
             return False
         try:    
-            os.kill(seto,lf.kvm_pid, 9)
+            os.kill(self.kvm_pid, 9)
             sleep(0.8)
             self.is_running()
             sys.exit(0)

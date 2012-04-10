@@ -128,8 +128,6 @@ def main():
     
     args = parser.parse_args()
     
-    print args
-
     kvm_admin.debug = args.debug
 
     # assign the action and domain name dynamically
