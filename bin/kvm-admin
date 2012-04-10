@@ -146,8 +146,12 @@ def main():
 
     # assign optional argumente for shutdown
     if kvm_admin.action == "shutdown":
+        # make a check otherwise its override the default value 
+        # from header.py with None
+        if args.wait_to_send_enter
         kvm_admin.shutdown_wait_to_send_enter = args.wait_to_send_enter
-        kvm_admin.shutdown_time_out = args.time_out
+        if args.time_out:
+            kvm_admin.shutdown_time_out = args.time_out
        
     # assign all as domain name its used for status
     if kvm_admin.kvm_domain_name == "all" and kvm_admin.action == "status":
