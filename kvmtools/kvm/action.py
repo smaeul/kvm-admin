@@ -72,6 +72,8 @@ class Action(Domain):
             for key, value in self.bridge.iteritems():
                 env[key] = value
         try:
+            if self.verbose:
+                print "booting ..."
             result = Popen(self.command[0], env=env, stdin=PIPE, stdout=PIPE)
             result.wait()
             return (True, "")
@@ -134,7 +136,6 @@ class Action(Domain):
                     sys.stdout.write("\t\tkilled in %0.1f seconds.\r" % \
                         ((timer + self.shutdown_time_out) - time() - 0.05))
                     sys.stdout.flush()
-                    
                 if (timer + self.shutdown_time_out) < (time() -0.05):
                     self.kvm_kill_action()
         else:
@@ -147,8 +148,11 @@ class Action(Domain):
         if not self.is_running():
             print ("Guest is not running.")
             return False
-        try:    
+        try:
             os.kill(self.kvm_pid, 9)
+            if self.verbose:
+                sys.stdout.write("killed ...                                \n")
+                sys.stdout.flush()
             sleep(0.8)
             self.is_running()
             sys.exit(0)
