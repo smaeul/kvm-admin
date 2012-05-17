@@ -121,10 +121,10 @@ class BuildConfig(object):
         for key, value in self.config["net"].iteritems():
             if value.startswith("tap"):
                 # search for ifname otherwise set it from domain_name name
-                if re.search("ifname", value):
+                if re.search("ifname", value) and not re.search("fd=", value):
                     ifname = re.search("ifname=([a-zA-Z0-9]+)", value)
                     bridge_if = ifname.group(1)
-                else:
+                elif not re.search("fd=", value):
                     ifname = "=".join(["ifname", 
                         self.kvm_domain_name + str(counter)])
                     bridge_if = self.kvm_domain_name + str(counter)
@@ -133,32 +133,37 @@ class BuildConfig(object):
                     else:
                         value = re.sub("tap", "tap,%s", value) % ifname
                     counter += 1
-                assert type(bridge_if) is str, "ifname is not a string %s" % ifname
-                # build the bridge key for exporting to the environ   
-                bridge_key = "_".join(["kvm_bridge", bridge_if])
-                assert type(bridge_key) is str, "bridge_key is not a str: %s" % \
+                if not re.search("fd=", value):    
+                    assert type(bridge_if) is str, "ifname is not a string %s" % ifname
+                    # build the bridge key for exporting to the environ   
+                    bridge_key = "_".join(["kvm_bridge", bridge_if])
+                    assert type(bridge_key) is str, "bridge_key is not a str: %s" % \
                     bridge_key
                 # search for bridge value
                 if re.search("bridge", value):
                     bridge = re.search("(,|)bridge=([a-zA-Z0-9]+)", value)
-                    # remove the bridge from string
-                    value = value.replace(bridge.group(0), "")
-                    # assign bridge for exporting the bridge name
-                    self.bridge[bridge_key] = bridge.group(2)
-                else:
-                    msg = "Missing second Value for bridge.\n"
-                    msg += "Syntax example: bridge=br0"
-                    raise Exception(msg)
+                    if bridge:
+                        # remove the bridge from string
+                        value = value.replace(bridge.group(0), "")
+                        # assign bridge for exporting the bridge name
+                        self.bridge[bridge_key] = bridge.group(2)
+                    else:
+                        msg = "Missing second Value for bridge.\n"
+                        msg += "Syntax example: bridge=br0"
+                        if self.action != "modify":
+                            raise RuntimeError(msg)
                 # search for script 
-                if not re.search("script", value):
+                if not re.search("script", value) and not re.search("fd=", value):
                     ifup = "=".join(["script",
                         os.path.join(self.kvm_scripts_dir, 'kvm-ifup')])
                     value = ",".join([value, ifup])
                 # search for downscript
-                if not re.search("downscript", value):
+                if not re.search("downscript", value) and not re.search("fd=", value):
                     ifdown = "=".join(["downscript",
                         os.path.join(self.kvm_scripts_dir, 'kvm-ifdown')])
                     value = ",".join([value, ifdown])
+                if re.search("vnet_hdr", value) and re.search("fd=", value):
+                    raise RuntimeError("ifname=, script=, downscript= and vnet_hdr= is invalid with fd=")
                 # add the cleaned value to temporary dictionary
                 temp[key] = value
             else:                    
