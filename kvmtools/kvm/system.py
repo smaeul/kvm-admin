@@ -78,11 +78,14 @@ class System(object):
 
     def _get_process_info(self):
         """Collect information from proc."""
+        self.is_running()
+        fd = None
         try:
             fd = open(os.path.join("/proc", "%d/status" % self.kvm_pid))
             lines = [line.strip().split(':') for line in fd.readlines()]
         except IOError, e:
             print "Operation failed: %s" % e
+            sys.exit(1) 
         finally:    
             if fd:
                 fd.close()
