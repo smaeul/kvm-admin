@@ -141,7 +141,7 @@ class BuildConfig(object):
                     bridge_key
                 # search for bridge value
                 if re.search("bridge", value):
-                    bridge = re.search("(,|)bridge=([a-zA-Z0-9]+)", value)
+                    bridge = re.search("(,|)bridge=([a-zA-Z0-9-_]+)", value)
                     if bridge:
                         # remove the bridge from string
                         value = value.replace(bridge.group(0), "")

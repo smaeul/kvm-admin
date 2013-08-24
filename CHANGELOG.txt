@@ -1,0 +1,4 @@
+* 0.1.7.8 [20130823] 
+    - fix issue when bridge have score or underscore in his name
+      in kvmtools/config/build_config.py
+    - some very small fixes but not affect the code

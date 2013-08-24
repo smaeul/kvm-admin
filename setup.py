@@ -4,7 +4,9 @@
 #
 
 """
-(c) 2011-2012 Jens Kasten <jens@kasten-edv.de>
+(c) 2011-2013 Jens Kasten <jens@kasten-edv.de>
+
+last modified: 20130823
 """
 
 from distutils.core import setup
@@ -31,7 +33,7 @@ def copy_configs():
     copytree("config", path.kvm_config_dir)
     os.chmod(path.kvm_config_dir, 0755)
     if not os.path.isdir(path.kvm_domains_dir):
-        os.mkdir(self.kvm_domains_dir)
+        os.mkdir(path.kvm_domains_dir)
     os.chmod(path.kvm_domains_dir, 0755)
     copy("domains/example", example)
     if not os.path.isdir(path.kvm_auto_dir):
@@ -49,7 +51,7 @@ dirs.append("kvmtools")
 
 setup(
     name = "kvmtools",
-    version = "0.1.7.7",
+    version = "0.1.7.8",
     keywords = ["kvm-admin", "kvmtools"],
     author = "Jens Kasten",
     author_email = "jens@kasten-edv.de",

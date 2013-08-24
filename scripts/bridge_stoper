@@ -1,4 +1,6 @@
 #!/bin/bash
+# obsolete only to examine the old style
+#
 # bring down nic and bridge
 # rename a existing network interface
 # destroy bridge 

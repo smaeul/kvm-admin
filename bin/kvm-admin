@@ -23,7 +23,7 @@
 #
 
 """
-(c) 2007-2012 Jens Kasten <jens@kasten-edv.de> 
+(c) 2007-2013 Jens Kasten <jens@kasten-edv.de> 
 """
 
 import os
@@ -98,6 +98,8 @@ def main():
         help=_("Print full python traceback if an error occur."))
     parser.add_argument("--verbose", default=False, action="store_true",
         help=_("Show additional information."))
+    parser.add_argument("--version", default=False, action="store_true",
+        help=_("Show version number."))
     
     # add action as subparser
     subparser = parser.add_subparsers(title="All commands for kvm-admin",
@@ -145,7 +147,7 @@ def main():
         kvm_admin.monitor = args.args_monitor        
     else:
         # set default monitor to help
-        kvm_admin.monitor =["help"] 
+        kvm_admin.monitor = ["help"] 
 
     # assign optional argumente for shutdown
     if kvm_admin.action == "shutdown":

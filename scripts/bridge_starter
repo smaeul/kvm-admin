@@ -1,4 +1,6 @@
 #!/bin/bash
+# obsolet only for examine the old style
+#
 # rename a existing network interface
 # create a bridge 
 # add the renamed network interface to the bridge

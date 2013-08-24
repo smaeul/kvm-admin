@@ -8,7 +8,7 @@ A commandline script to use a simple domain(guest) configuration file.
 Usage
 =====
 ### kvm-admin ####
-usage: kvm-admin [-h] [--debug] [--verbose]
+usage: kvm-admin [-h] [--debug] [--verbose] [--version]
                  {boot,create,kill,modify,monitor,reboot,show,shutdown,status}
                  ...
 kvm-admin: error: too few arguments
