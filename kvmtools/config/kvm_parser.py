@@ -79,6 +79,8 @@ class Parser(object):
         if not lines:
             return False
         config = {}
+        device = {}
+        device_counter = 0
         drive = {}
         drive_counter = 0
         net = {}
@@ -88,9 +90,13 @@ class Parser(object):
         for line in lines:
             if len(line) > 0:
                 line = line.split("=", 1)
-                # check for drive, net and char keys and 
+                # check for device, drive, net and char keys and
                 # add them im a separate dict to avoid overriding
-                if line[0] == "drive":
+                if line[0] == "device":
+                    device[device_counter] = line[1]
+                    config['device'] = device
+                    device_counter += 1
+                elif line[0] == "drive":
                     drive[drive_counter] = line[1]
                     config['drive'] = drive
                     drive_counter += 1
